@@ -26,6 +26,7 @@ go mod init github.com/usuario/meu-projeto
 Remove dependências não utilizadas do go.mod e go.sum.
 Baixa dependências faltantes no projeto.
 
-[⬅ Voltar para o README principal](/README.md)
+[⬅ Voltar para o README principal](../../README.md)
+
 
 
