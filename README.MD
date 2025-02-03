@@ -1,4 +1,4 @@
 **Formação Go Expert**
 
-[Comandos](docs/comandos.md)
+[Comandos](docs/comandos/README.md)
 
