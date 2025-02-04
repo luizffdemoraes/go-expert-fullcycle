@@ -4,4 +4,4 @@
 
 [Comandos](docs/comandos/README.md)
 
-[Arrays e Slices](docs/dados-compostos/README.md)
+[Arrays, Slices e Map](docs/dados-compostos/README.md)
