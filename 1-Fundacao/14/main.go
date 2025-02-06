@@ -16,9 +16,9 @@ type Cliente struct {
 	Endereco
 }
 
-func (c Cliente) Desativar() {
+func (c *Cliente) Desativar() {
 	c.Ativo = false
-	fmt.Printf("O cliente %s foi desativado\n", c.Nome)
+	fmt.Printf("O cliente %s foi desativado %t\n", c.Nome, c.Ativo)
 }
 
 // main é a função principal que será executada ao rodar o programa utilizara de composição para criar um endereço para o cliente
