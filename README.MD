@@ -5,3 +5,5 @@
 [Comandos](docs/comandos/README.md)
 
 [Arrays, Slices e Map](docs/dados-compostos/README.md)
+
+[Ponteiros](docs/ponteiros/README.md)
