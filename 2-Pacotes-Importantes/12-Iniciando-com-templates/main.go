@@ -5,6 +5,13 @@ import (
 	"os"
 )
 
+/*
+**
+
+	Documentação.: https://pkg.go.dev/html/template
+
+**
+*/
 type Curso struct {
 	Nome         string
 	CargaHoraria int
