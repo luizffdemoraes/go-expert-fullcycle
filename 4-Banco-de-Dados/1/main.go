@@ -30,6 +30,7 @@ func NewProduct(name string, price float64) *Product {
 
 func main() {
 
+	// Realizando conexão com o banco
 	db, err := sql.Open("mysql", "root:root@tcp(localhost:3306)/goexpert")
 	if err != nil {
 		panic(err)
@@ -44,12 +45,14 @@ func main() {
 }
 
 func insertProduct(db *sql.DB, product *Product) error {
+	// Preparando a query
 	stmt, err := db.Prepare("INSERT INTO products (id, name, price) VALUES (?, ?, ?)") // $1 $2 $3 caso utilize sqlite
 	if err != nil {
 		return err
 	}
 	defer stmt.Close()
 	// result ele contempla os dados que foram inseridos
+	// Executando a query
 	_, err = stmt.Exec(product.ID, product.Name, product.Price)
 	return err
 }
