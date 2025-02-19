@@ -66,6 +66,11 @@ func main() {
 	for _, p := range products {
 		fmt.Printf("Product: %v, possui o preço de %.2f\n", p.Name, p.Price)
 	}
+
+	err = deleteProduct(db, p.ID)
+	if err != nil {
+		panic(err)
+	}
 }
 
 func insertProduct(db *sql.DB, product *Product) error {
@@ -95,7 +100,7 @@ func updateProduct(db *sql.DB, product *Product) error {
 
 func selesctProduct(ctx context.Context, db *sql.DB, id string) (*Product, error) {
 	// Preparando a query
-	stmt, err := db.Prepare("SELECT id, name, price FROM products WHERE id = ?") // $1 $2 $3 caso utilize sqlite
+	stmt, err := db.Prepare("SELECT id, name, price FROM products WHERE id = ?") 
 	if err != nil {
 		return nil, err
 	}
@@ -114,7 +119,7 @@ func selesctProduct(ctx context.Context, db *sql.DB, id string) (*Product, error
 
 func selectAllProducts(db *sql.DB) ([]Product, error) {
 	// Executando a query
-	rows, err := db.Query("SELECT id, name, price FROM products") // $1 $2 $3 caso utilize sqlite
+	rows, err := db.Query("SELECT id, name, price FROM products")
 	if err != nil {
 		return nil, err
 	}
@@ -130,4 +135,16 @@ func selectAllProducts(db *sql.DB) ([]Product, error) {
 		products = append(products, p)
 	}
 	return products, nil
+}
+
+func deleteProduct(db *sql.DB, id string) error {
+	// Preparando a query
+	stmt, err := db.Prepare("DELETE FROM products WHERE id = ?") 
+	if err != nil {
+		return err
+	}
+	defer stmt.Close()
+	// Executando a query
+	_, err = stmt.Exec(id)
+	return err
 }
