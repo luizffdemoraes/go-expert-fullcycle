@@ -1,7 +1,10 @@
 package main
 
 import (
+	"context"
 	"database/sql"
+	"fmt"
+	"time"
 
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/google/uuid"
@@ -29,6 +32,8 @@ func NewProduct(name string, price float64) *Product {
 }
 
 func main() {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
 
 	// Realizando conexão com o banco
 	db, err := sql.Open("mysql", "root:root@tcp(localhost:3306)/goexpert")
@@ -47,6 +52,12 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+
+	p, err := selesctProduct(ctx, db, product.ID)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Printf("Product: %v, possui o preço de %.2f\n", p.Name, p.Price)
 }
 
 func insertProduct(db *sql.DB, product *Product) error {
@@ -72,4 +83,23 @@ func updateProduct(db *sql.DB, product *Product) error {
 	// Executando a query
 	_, err = stmt.Exec(product.Name, product.Price, product.ID)
 	return err
+}
+
+func selesctProduct(ctx context.Context, db *sql.DB, id string) (*Product, error) {
+	// Preparando a query
+	stmt, err := db.Prepare("SELECT id, name, price FROM products WHERE id = ?") // $1 $2 $3 caso utilize sqlite
+	if err != nil {
+		return nil, err
+	}
+	defer stmt.Close()
+
+	var p Product
+	// Executando a query
+	stmt.QueryRowContext(ctx, id).Scan(&p.ID, &p.Name, &p.Price)
+	// err = stmt.QueryRow(id).Scan(&p.ID, &p.Name, &p.Price)
+	if err != nil {
+		return nil, err
+	}
+
+	return &p, nil
 }
