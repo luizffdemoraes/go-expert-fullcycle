@@ -8,6 +8,7 @@ import (
 )
 
 type Product struct {
+	gorm.Model
 	ID    int `gorm:"primaryKey;autoIncrement"`
 	Name  string
 	Price float64
@@ -16,7 +17,7 @@ type Product struct {
 // https://gorm.io/
 // DROP TABLE products;
 func main() {
-	dsn := "root:root@tcp(localhost:3306)/goexpert"
+	dsn := "root:root@tcp(localhost:3306)/goexpert?charset=utf8mb4&parseTime=True&loc=Local"
 	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
 	if err != nil {
 		panic(err)
@@ -26,7 +27,7 @@ func main() {
 
 	// create
 	// db.Create(&Product{
-	// 	Name: "Notebook",
+	// 	Name:  "Notebook",
 	// 	Price: 1000.00,
 	// })
 
@@ -70,13 +71,13 @@ func main() {
 	// 	fmt.Println(product)
 	// }
 
-	var p Product
-	db.First(&p, 1)
-	p.Name = "SSD Kingston"
-	db.Save(&p)
+	// var p Product
+	// db.First(&p, 1)
+	// p.Name = "SSD Kingston"
+	// db.Save(&p)
 
 	var p2 Product
-	db.First(&p2, 1)
+	db.First(&p2, 2)
 	fmt.Println(p2.Name)
 	db.Delete(&p2)
 
