@@ -7,6 +7,12 @@ import (
 	"gorm.io/gorm"
 )
 
+type Category struct {
+	ID    int `gorm:"primaryKey;autoIncrement"`
+	Name  string
+
+}
+
 type Product struct {
 	gorm.Model
 	ID    int `gorm:"primaryKey;autoIncrement"`
