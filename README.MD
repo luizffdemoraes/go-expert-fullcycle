@@ -12,4 +12,6 @@
 
 [Comandos para Compilação de Projetos](docs/comandos-compilacao/README.md)
 
+[Comandos para Docker e Mysql](docs/comandos-docker-mysql/README.md)
+
 
