@@ -54,14 +54,38 @@ O comando go mod tidy remove dependências não utilizadas e adiciona as necess�
 ✅ Isso ajuda a manter o go.mod limpo e atualizado sem interromper o fluxo de trabalho caso existam problemas menores.
 
 
-6️⃣ go test .
+7️⃣ go test .
 
 🔹 O que faz?
 
+Executa os testes dentro do pacote atual (. significa "pacote atual").
 
-6️⃣ go test -v
+✅ O Go procura por arquivos com _test.go, executa as funções Test*, e exibe o resultado.
+
+
+8️⃣ go test -v
 
 🔹 O que faz?
+
+Executa os testes de forma verbosa, mostrando detalhes sobre cada teste rodado.
+
+✅ Exibe mensagens como:
+
+9️⃣ go test -coverprofile=coverage
+
+🔹 O que faz?
+
+Executa os testes e gera um relatório de cobertura de código no arquivo coverage.
+
+✅ Esse arquivo pode ser usado para analisar quais partes do código foram testadas.
+
+🔟 go tool cover -html=coverage
+
+🔹 O que faz?
+
+Abre um relatório visual em HTML mostrando a cobertura do código.
+
+✅ Exibe quais linhas do código foram testadas e quais não foram, destacando o código em cores diferentes.
 
 
 [⬅ Voltar para o README principal](/README.MD)
