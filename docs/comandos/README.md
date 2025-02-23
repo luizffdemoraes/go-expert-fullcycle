@@ -53,6 +53,17 @@ O comando go mod tidy remove dependências não utilizadas e adiciona as necess�
 
 ✅ Isso ajuda a manter o go.mod limpo e atualizado sem interromper o fluxo de trabalho caso existam problemas menores.
 
+
+6️⃣ go test .
+
+🔹 O que faz?
+
+
+6️⃣ go test -v
+
+🔹 O que faz?
+
+
 [⬅ Voltar para o README principal](/README.MD)
 
 
