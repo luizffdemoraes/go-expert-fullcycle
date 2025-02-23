@@ -87,6 +87,51 @@ Abre um relatório visual em HTML mostrando a cobertura do código.
 
 ✅ Exibe quais linhas do código foram testadas e quais não foram, destacando o código em cores diferentes.
 
+1️⃣1️⃣ go test -bench=. -count=10 -benchtime=3s -benchmem
+
+🔹 O que faz?
+
+Executa testes de benchmark para medir o desempenho do código no pacote atual.
+
+✅ Diferente dos testes normais (go test), que verificam a corretude do código, o benchmark mede o tempo de execução de funções específicas.
+
+1️⃣2️⃣ go test -bench=. -run=^#
+
+🔹 O que faz?
+
+Executa apenas os benchmarks, ignorando os testes unitários.
+
+✅ Explicação:
+
+-bench=. → Roda todos os benchmarks no pacote atual.
+-run=^# → Regex que não corresponde a nenhum teste unitário, ou seja, impede que os testes normais sejam executados.
+
+1️⃣3️⃣ go test -bench=. -count=10 -benchtime=3s
+
+🔹 O que faz?
+
+Executa benchmarks 10 vezes, rodando cada um por pelo menos 3 segundos.
+
+✅ Explicação dos flags:
+
+-bench=. → Roda todos os benchmarks no pacote atual.
+-count=10 → Executa cada benchmark 10 vezes, garantindo resultados mais estáveis.
+-benchtime=3s → Faz cada benchmark rodar por pelo menos 3 segundos, ajustando dinamicamente o número de iterações.
+
+1️⃣4️⃣ go test -bench=. -benchmem
+
+🔹 O que faz?
+
+🔹 Executa benchmarks e mede o uso de memória.
+
+✅ Explicação dos flags:
+
+-bench=. → Roda todos os benchmarks.
+-benchmem → Mede o uso de memória, incluindo:
+Bytes alocados por operação (B/op)
+Número de alocações de heap (allocs/op)
+
+
 
 [⬅ Voltar para o README principal](/README.MD)
 
