@@ -16,7 +16,7 @@ func TestNewProduct(t *testing.T) {
 func TestProductWhenNameIsRequired(t *testing.T) {
 	p, err := NewProduct("", 10)
 	assert.Nil(t, p)
-	assert.Equal(t, ErrIDIsRequired, err)
+	assert.Equal(t, ErrNameIsRequired, err)
 }
 
 func TestProductWhenPriceIsRequired(t *testing.T) {
