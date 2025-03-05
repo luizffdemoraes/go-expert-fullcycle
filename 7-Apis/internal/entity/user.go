@@ -1,14 +1,15 @@
 package entity
 
 import (
+	"github.com/fullcycle/curso-go/7-Apis/pkg/entity"
 	"golang.org/x/crypto/bcrypt"
 )
 
 type User struct {
-	ID       ID     `json:"id"`
-	Name     string `json:"name"`
-	Email    string `json:"email"`
-	Password string `json:"-"`
+	ID       entity.ID `json:"id"`
+	Name     string    `json:"name"`
+	Email    string    `json:"email"`
+	Password string    `json:"-"`
 }
 
 func NewUser(name, email, password string) (*User, error) {
@@ -18,7 +19,7 @@ func NewUser(name, email, password string) (*User, error) {
 	}
 
 	return &User{
-		ID:       NewID(),
+		ID:       entity.NewID(),
 		Name:     name,
 		Email:    email,
 		Password: string(hash),
