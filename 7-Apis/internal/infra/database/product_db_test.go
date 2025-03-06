@@ -62,5 +62,77 @@ func TestFindAllProducts(t *testing.T) {
 	assert.Len(t, products, 3)
 	assert.Equal(t, "Product 21", products[0].Name)
 	assert.Equal(t, "Product 23", products[2].Name)
+}
 
+func TestFindProductByID(t *testing.T) {
+	db, err := gorm.Open(sqlite.Dialector{DriverName: "sqlite", DSN: "file::memory:"}, &gorm.Config{})
+	if err != nil {
+		t.Error(err)
+	}
+
+	// Realiza a migração
+	err = db.AutoMigrate(&entity.Product{})
+	if err != nil {
+		t.Error(err)
+	}
+
+	// Cria um novo produto
+	product, err := entity.NewProduct("Produto 1", 120.0)
+	assert.NoError(t, err)
+
+	// Salva no banco
+	if err := db.Create(product).Error; err != nil {
+		t.Error(err)
+	}
+
+	// Instancia o repositório e busca o produto
+	productDB := NewProduct(db)
+	productFound, err := productDB.FindByID(product.ID.String())
+
+	assert.Nil(t, err)
+	assert.Equal(t, product.ID, productFound.ID)
+	assert.Equal(t, product.Name, productFound.Name)
+}
+
+func TestUpdateProductByID(t *testing.T) {
+
+	db, err := gorm.Open(sqlite.Dialector{DriverName: "sqlite", DSN: "file::memory:"}, &gorm.Config{})
+	if err != nil {
+		t.Error(err)
+	}
+	db.AutoMigrate(&entity.Product{})
+	product, err := entity.NewProduct("Product 1", 10)
+	assert.NoError(t, err)
+
+	db.Create(product)
+	productDB := NewProduct(db)
+
+	product.Name = "Product 2"
+	err = productDB.Update(product)
+	assert.NoError(t, err)
+
+	productFound, err := productDB.FindByID(product.ID.String())
+	assert.NoError(t, err)
+	assert.Equal(t, "Product 2", productFound.Name)
+}
+
+func TestDeleteProductByID(t *testing.T) {
+
+	db, err := gorm.Open(sqlite.Dialector{DriverName: "sqlite", DSN: "file::memory:"}, &gorm.Config{})
+	if err != nil {
+		t.Error(err)
+	}
+	db.AutoMigrate(&entity.Product{})
+	product, err := entity.NewProduct("Product 1", 10)
+	assert.NoError(t, err)
+
+	db.Create(product)
+	productDB := NewProduct(db)
+
+	err = productDB.Delete(product)
+	assert.NoError(t, err)
+
+	product, err = productDB.FindByID(product.ID.String())
+	assert.Error(t, err)
+	assert.Empty(t, product)
 }
