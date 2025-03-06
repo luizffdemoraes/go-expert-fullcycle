@@ -14,4 +14,4 @@
 
 [Comandos para Docker e Mysql](docs/comandos-docker-mysql/README.md)
 
-
+[Solução de erros atrelados go sqlite3](docs/erros-go-sqlite3/README.md)

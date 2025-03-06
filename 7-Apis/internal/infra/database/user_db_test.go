@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
-	_ "modernc.org/sqlite" // Importa o driver sem CGO
+	_ "modernc.org/sqlite" // Driver SQLite sem CGO
 )
 
 func TestCreateUser(t *testing.T) {
