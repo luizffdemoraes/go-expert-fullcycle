@@ -33,6 +33,8 @@ func main() {
 
 	r.Route("/products", func(r chi.Router) {
 		r.Post("/", productHandler.CreateProduct)
+		r.Get("/{id}", productHandler.GetProduct)
+		r.Put("/{id}", productHandler.UpdateProduct)
 	})
 	http.ListenAndServe(":8000", r)
 }
