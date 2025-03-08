@@ -20,12 +20,13 @@ type UserHandler struct {
 func NewUserHandler(userDB database.UserInterface, jwt *jwtauth.JWTAuth, jwtExperieIn int) *UserHandler {
 	return &UserHandler{
 		UserDB:       userDB,
-		Jwt:          jwt, 
-		JwtExperieIn: jwtExperieIn, 
+		Jwt:          jwt,
+		JwtExperieIn: jwtExperieIn,
 	}
 }
 
 func (h *UserHandler) GetJWT(w http.ResponseWriter, r *http.Request) {
+	r.Context().Value("token")
 	var user dto.GetJWTInput
 	err := json.NewDecoder(r.Body).Decode(&user)
 	if err != nil {

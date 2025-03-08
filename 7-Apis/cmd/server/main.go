@@ -9,6 +9,7 @@ import (
 	"github.com/fullcycle/curso-go/7-Apis/internal/infra/webserver/handlers"
 	chi "github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/go-chi/jwtauth"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
@@ -35,6 +36,8 @@ func main() {
 	r.Use(middleware.Logger)
 
 	r.Route("/products", func(r chi.Router) {
+		r.Use(jwtauth.Verifier(configs.TokenAuth))
+		r.Use(jwtauth.Authenticator)
 		r.Post("/", productHandler.CreateProduct)
 		r.Get("/{id}", productHandler.GetProduct)
 		r.Get("/", productHandler.GetProducts)
@@ -42,8 +45,10 @@ func main() {
 		r.Delete("/{id}", productHandler.DeleteProduct)
 	})
 
-	r.Post("/users", userHandler.Create)
-	r.Post("/users/generate_token", userHandler.GetJWT)
+	r.Route("/users", func(r chi.Router) {
+		r.Post("/", userHandler.Create)
+		r.Post("/generate_token", userHandler.GetJWT)
+	})
 
 	http.ListenAndServe(":8000", r)
 }
