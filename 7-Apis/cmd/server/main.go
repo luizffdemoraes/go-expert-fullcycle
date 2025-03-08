@@ -14,7 +14,7 @@ import (
 )
 
 func main() {
-	_, err := configs.LoadConfig(".")
+	configs, err := configs.LoadConfig(".")
 	if err != nil {
 		panic(err)
 	}
@@ -28,7 +28,7 @@ func main() {
 	productHandler := handlers.NewProductHandler(productDB)
 
 	userDB := database.NewUser(db)
-	userHandler := handlers.NewUserHandler(userDB)
+	userHandler := handlers.NewUserHandler(userDB, configs.TokenAuth, configs.JwtExperesIn)
 
 	//Roteador chi https://go-chi.io/#/README
 	r := chi.NewRouter()
@@ -43,6 +43,7 @@ func main() {
 	})
 
 	r.Post("/users", userHandler.Create)
+	r.Post("/users/generate_token", userHandler.GetJWT)
 
 	http.ListenAndServe(":8000", r)
 }
