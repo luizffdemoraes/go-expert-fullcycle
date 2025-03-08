@@ -7,9 +7,10 @@ import (
 	"github.com/fullcycle/curso-go/7-Apis/internal/entity"
 	"github.com/fullcycle/curso-go/7-Apis/internal/infra/database"
 	"github.com/fullcycle/curso-go/7-Apis/internal/infra/webserver/handlers"
+	chi "github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
-	_ "modernc.org/sqlite" // Driver SQLite sem CGO // Importa o driver sem CGO
 )
 
 func main() {
@@ -18,7 +19,6 @@ func main() {
 		panic(err)
 	}
 
-	// db, err := gorm.Open(sqlite.Dialector{DSN: "test.db"}, &gorm.Config{})
 	db, err := gorm.Open(sqlite.Open("test.db"), &gorm.Config{})
 	if err != nil {
 		panic(err)
@@ -27,6 +27,12 @@ func main() {
 	productDB := database.NewProduct(db)
 	productHandler := handlers.NewProductHandler(productDB)
 
-	http.HandleFunc("/products", productHandler.CreateProduct)
-	http.ListenAndServe(":8000", nil)
+	//Roteador chi https://go-chi.io/#/README
+	r := chi.NewRouter()
+	r.Use(middleware.Logger)
+
+	r.Route("/products", func(r chi.Router) {
+		r.Post("/", productHandler.CreateProduct)
+	})
+	http.ListenAndServe(":8000", r)
 }
