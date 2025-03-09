@@ -91,6 +91,18 @@ func (h *ProductHandler) GetProducts(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(products)
 }
 
+// GetProduct godoc
+// @Summary      Get a product
+// @Description  Get a product
+// @Tags         products
+// @Accept       json
+// @Produce      json
+// @Param        id path string true "product ID" Format(uuid)
+// @Success      200  {object} entity.Product
+// @Success      404
+// @Failure      500  {object} Error
+// @Router       /products/{id} [get]
+// @Security ApiKeyAuth
 func (h *ProductHandler) GetProduct(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	if id == "" {
@@ -107,6 +119,20 @@ func (h *ProductHandler) GetProduct(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(product)
 }
 
+// UpdateProduct godoc
+// @Summary      Update product
+// @Description  Update an existing product using its ID
+// @Tags         products
+// @Accept       json
+// @Produce      json
+// @Param        id      path     string              true  "Product ID" Format(uuid)
+// @Param        request body     entity.Product      true  "Product update request"
+// @Success      200     {object} entity.Product
+// @Failure      400     {object} map[string]string
+// @Failure      404     {object} map[string]string
+// @Failure      500     {object} map[string]string
+// @Router       /products/{id} [put]
+// @Security     ApiKeyAuth
 func (h *ProductHandler) UpdateProduct(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	if id == "" {
@@ -140,6 +166,19 @@ func (h *ProductHandler) UpdateProduct(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
+// DeleteProduct godoc
+// @Summary      Delete product
+// @Description  Delete a product by its ID
+// @Tags         products
+// @Accept       json
+// @Produce      json
+// @Param        id  path  string  true  "Product ID" Format(uuid)
+// @Success      200
+// @Failure      400  {object} map[string]string
+// @Failure      404  {object} map[string]string
+// @Failure      500  {object} map[string]string
+// @Router       /products/{id} [delete]
+// @Security     ApiKeyAuth
 func (h *ProductHandler) DeleteProduct(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	if id == "" {
@@ -159,5 +198,4 @@ func (h *ProductHandler) DeleteProduct(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.WriteHeader(http.StatusOK)
-
 }
