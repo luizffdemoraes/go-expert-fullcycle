@@ -5,17 +5,20 @@ import (
 	"net/http"
 
 	"github.com/fullcycle/curso-go/7-Apis/configs"
+	_ "github.com/fullcycle/curso-go/7-Apis/docs"
 	"github.com/fullcycle/curso-go/7-Apis/internal/entity"
 	"github.com/fullcycle/curso-go/7-Apis/internal/infra/database"
 	"github.com/fullcycle/curso-go/7-Apis/internal/infra/webserver/handlers"
 	chi "github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/jwtauth"
+	httpSwagger "github.com/swaggo/http-swagger"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
 
 // swag init -g cmd/server/main.go
+// http://localhost:8000/docs/index.html
 // @title           Go Expert API Example
 // @version         1.0
 // @description     Product API with authentication.
@@ -73,6 +76,8 @@ func main() {
 		r.Post("/", userHandler.Create)
 		r.Post("/generate_token", userHandler.GetJWT)
 	})
+
+	r.Get("/docs/*", httpSwagger.Handler(httpSwagger.URL("http://localhost:8000/docs/doc.json")))
 
 	http.ListenAndServe(":8000", r)
 }
