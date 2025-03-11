@@ -23,12 +23,23 @@ Em Go, o termo "processamento" geralmente se refere à forma como a linguagem tr
 ## 3. Concorrência vs. Paralelismo
 
 ### Concorrência:
-- Trata da capacidade de gerenciar várias tarefas de forma intercalada (simultaneamente), mesmo em um único núcleo.
+- Trata da capacidade de gerenciar várias tarefas de forma intercalada (simultaneamente), mesmo em um único núcleo. Em Go, isso é feito com goroutines e channels.
+
 - As goroutines são concorrentes, permitindo escrever código que pareça "executar ao mesmo tempo", embora, na prática, elas sejam escalonadas pela runtime do Go.
 
 ### Paralelismo:
 - Ocorre quando várias tarefas realmente são executadas ao mesmo tempo, em múltiplos núcleos de processamento.
 - O Go permite paralelismo configurando a quantidade de núcleos que serão utilizados com a função `runtime.GOMAXPROCS`.
+
+- Refere-se à execução simultânea de tarefas em múltiplos núcleos, o que pode aumentar a performance, mas exige cuidado na sincronização do acesso à memória.
+
+- Trata da capacidade de gerenciar diversas tarefas ao mesmo tempo, permitindo que elas progridam intercaladamente, mesmo que em um único núcleo. Em Go, isso é feito com goroutines e channels.
+
+### Observação:
+- Embora o paralelismo permita que tarefas sejam processadas ao mesmo tempo, isso pode levar a conflitos de memória se múltiplas goroutines acessarem ou modificarem os mesmos dados simultaneamente. Esse tipo de condição pode resultar em inconsistências e erros inesperados.
+
+### Solução:
+- Para evitar esses problemas, é recomendável utilizar mecanismos de sincronização, como mutexes. Um mutex (mutual exclusion lock) garante que apenas uma goroutine acesse uma seção crítica do código por vez. Assim, mesmo quando tarefas são processadas paralelamente, o acesso aos dados compartilhados é controlado, permitindo que o valor seja atualizado de forma segura e liberado somente após a finalização do processo em execução.
 
 ---
 
