@@ -41,6 +41,19 @@ Em Go, o termo "processamento" geralmente se refere à forma como a linguagem tr
 ### Solução:
 - Para evitar esses problemas, é recomendável utilizar mecanismos de sincronização, como mutexes. Um mutex (mutual exclusion lock) garante que apenas uma goroutine acesse uma seção crítica do código por vez. Assim, mesmo quando tarefas são processadas paralelamente, o acesso aos dados compartilhados é controlado, permitindo que o valor seja atualizado de forma segura e liberado somente após a finalização do processo em execução.
 
+
+### Principais Diferenças
+- Concorrência:
+    - Gerencia a execução de múltiplas tarefas de forma intercalada.
+    - Pode ocorrer mesmo em um sistema com um único núcleo.
+    - Foca na estruturação do programa para lidar com múltiplas atividades.
+- Paralelismo:
+    - Executa tarefas simultaneamente em múltiplos núcleos.
+    - Exige hardware com mais de um núcleo para ocorrer.
+    - Foca em aumentar o desempenho real através da execução simultânea.
+
+- O número de CPUs configurado com runtime.GOMAXPROCS define quantos núcleos o Go pode usar para executar tarefas em paralelo, ou seja, para execução paralela. Entretanto, a concorrência não depende apenas do número de CPUs, pois ela se refere à capacidade do programa de lidar com múltiplas tarefas simultaneamente, mesmo que elas sejam escalonadas em um único núcleo.
+
 ---
 
 ## 4. Processamento em Go: O Que Isso Significa?
