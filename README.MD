@@ -19,3 +19,5 @@
 [Web Frameworks vs Frameworks](docs/go-frameworks/README.md)
 
 [Multithreading](docs/multithreading/README.md)
+
+[Scheduler](docs/scheduler/README.md)
