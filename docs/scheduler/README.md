@@ -23,6 +23,19 @@ Exemplo: Algumas implementações antigas de sistemas operacionais móveis ou al
 
 **Risco:** Se uma tarefa não ceder o controle, pode causar problemas de responsividade.
 
+## 2. Go scheduler
+O scheduler do Go é uma parte fundamental da runtime que gerencia a execução das goroutines (as “green threads” do Go) e as distribui entre as threads do sistema operacional. Em vez de criar uma thread do sistema para cada tarefa (o que seria pesado e custoso em termos de memória e desempenho), o Go cria goroutines que são muito mais leves e são multiplexadas em um número menor de threads reais.
+
+## Vantagens das Green Threads (Goroutines) em Go
+**Leveza:**
+- As goroutines têm overhead muito baixo, permitindo que você crie milhares ou milhões delas sem comprometer significativamente os recursos do sistema.
+
+**Simplicidade:**
+- A utilização da palavra-chave go torna muito fácil iniciar uma goroutine e escrever código concorrente sem a complexidade de lidar com threads nativas.
+
+**Escalabilidade:**
+- Com o gerenciamento de goroutines e o escalonamento M:N, aplicações Go podem aproveitar ao máximo os núcleos disponíveis e se adaptar a cargas de trabalho intensas de forma eficiente.
+
 
 
 
