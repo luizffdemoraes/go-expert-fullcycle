@@ -29,7 +29,7 @@ mesmo que em um único núcleo de CPU. O Go Scheduler alterna a execução entre
 */
 func main() {
 	waitGroup := sync.WaitGroup{}
-	waitGroup.Add(25)
+	waitGroup.Add(10)
 	// Thread 2
 	go task("A", &waitGroup)
 	// Thread 3
@@ -45,8 +45,8 @@ func main() {
 
 
 	// for _, name := range tasks {
-	// 	waitGroup.Add(1) // Adiciona dinamicamente antes de criar a goroutine
-	// 	go task(name, &waitGroup)
+	// 	wg.Add(1) // Adiciona dinamicamente antes de criar a goroutine
+	// 	go task(name, &wg)
 	// }
 
 	waitGroup.Wait()
