@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
-
 	"github.com/stretchr/testify/suite"
 )
 
@@ -30,6 +29,8 @@ type TestEventHandler struct {
 	ID int64
 }
 
+func (h *TestEventHandler) Handler(event EventInterface) {}
+
 type EventDispatcherTestSuite struct {
 	suite.Suite
 	event           TestEvent
@@ -44,14 +45,31 @@ func (suite *EventDispatcherTestSuite) SetupTest() {
 	suite.eventDispatcher = NewEventDispatcher()
 	suite.event = TestEvent{Name: "test", Payload: "test"}
 	suite.event2 = TestEvent{Name: "test2", Payload: "test2"}
-	suite.handler = TestEventHandler{}
-	suite.handler2 = TestEventHandler{}
-	suite.handler3 = TestEventHandler{}
+	suite.handler = TestEventHandler{
+		ID: 1,
+	}
+	suite.handler2 = TestEventHandler{
+		ID: 2,
+	}
+	suite.handler3 = TestEventHandler{
+		ID: 3,
+	}
 }
 
 func (suite *EventDispatcherTestSuite) TestEventDispatcher_Register() {
-	assert.True(suite.T(), true)
+	// assert.True(suite.T(), true)
 	// suite.Assert().True(true)
+
+	err := suite.eventDispatcher.Register(suite.event.GetName(), &suite.handler)
+	suite.Nil(err)
+	suite.Equal(1, len(suite.eventDispatcher.handlers[suite.event.GetName()]))
+
+	err = suite.eventDispatcher.Register(suite.event.GetName(), &suite.handler2)
+	suite.Nil(err)
+	suite.Equal(2, len(suite.eventDispatcher.handlers[suite.event.GetName()]))
+
+	assert.Equal(suite.T(), &suite.handler, suite.eventDispatcher.handlers[suite.event.GetName()][0])
+	assert.Equal(suite.T(), &suite.handler2, suite.eventDispatcher.handlers[suite.event.GetName()][1])
 }
 
 func TestSuite(t *testing.T) {
