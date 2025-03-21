@@ -14,7 +14,7 @@ type EventHandlerInterface interface {
 
 type EnventDispatcherInterface interface {
 	Register(eventName string, handler EventHandlerInterface) error
-	Distacher(event EventInterface) error
+	Dispatch(event EventInterface) error
 	Remove(eventName string, handler EventHandlerInterface) error
 	Has(eventName string, handler EventHandlerInterface) bool
 	Clear() error
