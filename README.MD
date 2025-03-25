@@ -21,3 +21,7 @@
 [Multithreading](docs/multithreading/README.md)
 
 [Scheduler](docs/scheduler/README.md)
+
+[Proxy-Golang](https://proxy.golang.org/)
+
+[Vendor-Golang](https://go.dev/src/README.vendor)
