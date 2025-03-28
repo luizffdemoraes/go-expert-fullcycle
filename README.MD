@@ -25,3 +25,5 @@
 [Proxy-Golang](https://proxy.golang.org/)
 
 [Vendor-Golang](https://go.dev/src/README.vendor)
+
+[Graphql](https://gqlgen.com/)
