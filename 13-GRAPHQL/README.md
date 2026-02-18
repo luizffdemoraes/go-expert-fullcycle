@@ -116,6 +116,21 @@ mutation createCourse {
 
 Substitua `categoryId` pelo ID real de uma categoria cadastrada no banco.
 
+### Listar cursos (Query)
+
+Para buscar todos os cursos:
+
+```graphql
+query queryCourses {
+  courses {
+    id
+    name
+  }
+}
+```
+
+A resposta será uma lista com todos os cursos cadastrados.
+
 ## Fluxo resumido
 
 1. **Criar o projeto:** `go mod init` → `go run github.com/99designs/gqlgen init` → editar o schema → `go run github.com/99designs/gqlgen generate`

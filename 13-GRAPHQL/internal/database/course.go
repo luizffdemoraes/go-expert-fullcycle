@@ -33,7 +33,7 @@ func (c *Course) Create(name, description, categoryID string) (*Course, error) {
 }
 
 func (c *Course) FindAll() ([]Course, error) {
-	rows, err := c.db.Query("SELECT id, name, description, categoryID FROM courses")
+	rows, err := c.db.Query("SELECT id, name, description, category_id FROM courses")
 	if err != nil {
 		return nil, err
 	}
