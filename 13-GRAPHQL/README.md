@@ -2,6 +2,18 @@
 
 Projeto de API GraphQL em Go utilizando [gqlgen](https://gqlgen.com/) e SQLite.
 
+## O que é GraphQL, como vive e para que foi feito
+
+**GraphQL** é uma linguagem de consulta e um runtime para APIs, criada pelo Facebook (hoje Meta) e publicada como especificação aberta. Em vez de vários endpoints REST que devolvem estruturas fixas, o cliente descreve exatamente quais dados quer e em que formato; o servidor responde só com isso.
+
+- **O que é:** uma API em que o cliente envia uma *query* (ou *mutation*) em texto, descrevendo os campos e relações desejados. O servidor tem um *schema* que define tipos, campos e operações; cada campo é resolvido por funções (resolvers) que podem buscar em banco, outros serviços, etc.
+
+- **Como “vive” na prática:** o cliente faz uma única requisição HTTP (em geral POST para `/graphql` ou `/query`) com a operação no body. O servidor interpreta o schema, executa os resolvers em cadeia (incluindo campos aninhados, como `courses { category { name } }`) e devolve JSON com a mesma “forma” do que foi pedido. Ferramentas como o GraphQL Playground permitem explorar o schema e testar queries no browser.
+
+- **Para que foi feito:** reduzir *overfetching* (trazer campos desnecessários) e *underfetching* (precisar de várias chamadas para montar uma tela). Uma única query pode pedir categorias com seus cursos, ou cursos com sua categoria, sem criar endpoints específicos para cada combinação. Isso simplifica o frontend e facilita evoluir a API sem quebrar clientes antigos.
+
+Neste projeto, o schema define tipos como `Category` e `Course`, com relações nos dois sentidos (`Category.courses` e `Course.category`). Os resolvers em Go carregam os dados no SQLite e o gqlgen gera o código que liga schema, tipos Go e HTTP.
+
 ## Pré-requisitos
 
 - Go 1.25+
@@ -176,6 +188,42 @@ Cada categoria retornada inclui o campo `courses` com a lista de cursos vinculad
    ```
 
    Assim o gqlgen regera `generated.go` e os stubs dos resolvers (como `Category.Courses`) para a implementação atual.
+
+### Cursos com categoria (Query aninhada)
+
+É possível buscar todos os cursos já trazendo a categoria de cada um:
+
+```graphql
+query queryCoursesWithCategory {
+  courses {
+    id
+    name
+    category {
+      id
+      name
+      description
+    }
+  }
+}
+```
+
+Cada curso retornado inclui o objeto `category` com os dados da categoria vinculada.
+
+#### O que foi necessário para funcionar
+
+1. **`gqlgen.yml`** – O mesmo mapeamento de models usado acima: o struct `Course` em `graph/model` não possui o campo `category`. Com isso, o gqlgen gera a interface `CourseResolver` com o método `Category(ctx, obj)`, que você implementa para retornar a categoria daquele curso.
+
+2. **Implementação do resolver** – No `graph/schema.resolvers.go`, o resolver `Course.Category` chama o banco para obter a categoria do curso, por exemplo: `CategoryDB.FindByCourseID(obj.ID)`.
+
+3. **Camada de dados** – Em `internal/database/category.go`, o método `FindByCourseID(courseID string)` faz um `JOIN` entre `categories` e `courses` (por `category_id`) e retorna a categoria cujo curso tem o `id` informado. Assim, a partir do `Course` já carregado na query raiz, o resolver preenche o campo `category` sob demanda.
+
+4. **Regenerar o código** – Após alterar schema ou `gqlgen.yml`:
+
+   ```bash
+   go run github.com/99designs/gqlgen generate
+   ```
+
+Resumo: tanto `Category.courses` quanto `Course.category` usam models Go sem esses campos relacionais; o gqlgen gera os resolvers de campo e a implementação consulta o banco (FindByCategoryID e FindByCourseID) para montar a resposta aninhada.
 
 ## Fluxo resumido
 
