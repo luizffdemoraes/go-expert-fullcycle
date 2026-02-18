@@ -26,7 +26,7 @@ go run github.com/99designs/gqlgen generate
 
 ## Configuração do banco de dados
 
-O projeto usa SQLite com o arquivo `data.db`. Crie a tabela de categorias:
+O projeto usa SQLite com o arquivo `data.db`. Crie as tabelas necessárias:
 
 ```bash
 sqlite3 data.db
@@ -36,12 +36,14 @@ No prompt do SQLite:
 
 ```sql
 CREATE TABLE categories (id TEXT, name TEXT, description TEXT);
+CREATE TABLE courses (id string, name string, description string, category_id string);
 ```
 
 Ou em uma linha (no terminal):
 
 ```bash
 sqlite3 data.db "CREATE TABLE categories (id TEXT, name TEXT, description TEXT);"
+sqlite3 data.db "CREATE TABLE courses (id string, name string, description string, category_id string);"
 ```
 
 > Em SQLite, o tipo recomendado para strings é `TEXT`. O arquivo `data.db` será criado no diretório de onde você executar o servidor (por padrão na pasta do projeto).
@@ -95,10 +97,29 @@ query queryCategories {
 
 A resposta será uma lista com todas as categorias cadastradas.
 
+### Criar um curso (Mutation)
+
+Para criar um curso vinculado a uma categoria, use o `id` de uma categoria existente (por exemplo, retornado por `createCategory` ou `queryCategories`):
+
+```graphql
+mutation createCourse {
+  createCourse(input: {
+    name: "Full Cycle",
+    description: "The best!",
+    categoryId: "8bcd0e47-bda1-4d7f-a0a5-fe1472ef676b"
+  }) {
+    id
+    name
+  }
+}
+```
+
+Substitua `categoryId` pelo ID real de uma categoria cadastrada no banco.
+
 ## Fluxo resumido
 
 1. **Criar o projeto:** `go mod init` → `go run github.com/99designs/gqlgen init` → editar o schema → `go run github.com/99designs/gqlgen generate`
-2. **Preparar o banco:** criar o arquivo `data.db` e a tabela `categories` com `sqlite3`
+2. **Preparar o banco:** criar o arquivo `data.db` e as tabelas `categories` e `courses` com `sqlite3`
 3. **Subir o servidor:** `go run ./cmd/server`
 4. **Testar:** abrir http://localhost:8080/ e usar as mutations e queries acima
 
