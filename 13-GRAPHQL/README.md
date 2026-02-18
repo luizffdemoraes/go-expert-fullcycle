@@ -131,6 +131,52 @@ query queryCourses {
 
 A resposta será uma lista com todos os cursos cadastrados.
 
+### Categorias com cursos (Query aninhada)
+
+A API permite buscar categorias já trazendo os cursos de cada uma em uma única query:
+
+```graphql
+query queryCategoriesWithCourses {
+  categories {
+    id
+    name
+    courses {
+      id
+      name
+      description
+    }
+  }
+}
+```
+
+Cada categoria retornada inclui o campo `courses` com a lista de cursos vinculados a ela.
+
+#### O que foi necessário para funcionar
+
+1. **`gqlgen.yml`** – Configuração dos models para usar structs customizados em `graph/model` (Category e Course). O struct `Category` em Go não possui o campo `courses`; ao mapear o tipo GraphQL `Category` para esse model, o gqlgen passa a gerar a interface `CategoryResolver` com o método `Courses(ctx, obj)`, que você implementa para carregar os cursos por `categoryId` no banco.
+
+   Trecho relevante em `gqlgen.yml`:
+
+   ```yaml
+   models:
+     Category:
+       model:
+         - github.com/luizffdemoraes/13-GraphQL/graph/model.Category
+     Course:
+       model:
+         - github.com/luizffdemoraes/13-GraphQL/graph/model.Course
+   ```
+
+2. **Implementação do resolver** – No `graph/schema.resolvers.go`, o resolver `Category.Courses` chama o banco (ex.: `CourseDB.FindByCategoryID(obj.ID)`) e retorna a lista de cursos daquela categoria.
+
+3. **Regenerar o código** – Após alterar o schema ou o `gqlgen.yml`, é preciso rodar novamente:
+
+   ```bash
+   go run github.com/99designs/gqlgen generate
+   ```
+
+   Assim o gqlgen regera `generated.go` e os stubs dos resolvers (como `Category.Courses`) para a implementação atual.
+
 ## Fluxo resumido
 
 1. **Criar o projeto:** `go mod init` → `go run github.com/99designs/gqlgen init` → editar o schema → `go run github.com/99designs/gqlgen generate`
