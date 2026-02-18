@@ -1,0 +1,114 @@
+# 13-GRAPHQL
+
+Projeto de API GraphQL em Go utilizando [gqlgen](https://gqlgen.com/) e SQLite.
+
+## Pré-requisitos
+
+- Go 1.25+
+- SQLite3 (para criação do banco de dados)
+
+## Como criar o projeto do zero
+
+Siga os passos abaixo para inicializar um novo projeto GraphQL com gqlgen:
+
+```bash
+# 1. Inicializar o módulo Go
+go mod init github.com/seu-usuario/13-GraphQL
+
+# 2. Inicializar o gqlgen (cria a estrutura base do schema e resolvers)
+go run github.com/99designs/gqlgen init
+
+# 3. Gerar o código a partir do schema GraphQL (após editar graph/schema.graphqls)
+go run github.com/99designs/gqlgen generate
+```
+
+> **Nota:** Ajuste o caminho do módulo em `go mod init` conforme seu repositório. O comando `gqlgen init` cria os arquivos `graph/schema.graphqls`, `graph/schema.resolvers.go`, `gqlgen.yml`, entre outros. Use `gqlgen generate` sempre que alterar o schema.
+
+## Configuração do banco de dados
+
+O projeto usa SQLite com o arquivo `data.db`. Crie a tabela de categorias:
+
+```bash
+sqlite3 data.db
+```
+
+No prompt do SQLite:
+
+```sql
+CREATE TABLE categories (id TEXT, name TEXT, description TEXT);
+```
+
+Ou em uma linha (no terminal):
+
+```bash
+sqlite3 data.db "CREATE TABLE categories (id TEXT, name TEXT, description TEXT);"
+```
+
+> Em SQLite, o tipo recomendado para strings é `TEXT`. O arquivo `data.db` será criado no diretório de onde você executar o servidor (por padrão na pasta do projeto).
+
+## Executando o servidor
+
+```bash
+go run ./cmd/server
+```
+
+O servidor sobe na porta **8080**. Acesse o **GraphQL Playground** em:
+
+- **http://localhost:8080/**
+
+As requisições GraphQL são enviadas para o endpoint **http://localhost:8080/query**.
+
+## Uso da API GraphQL
+
+### Criar uma categoria (Mutation)
+
+No Playground (ou em qualquer cliente GraphQL), execute:
+
+```graphql
+mutation createCategory {
+  createCategory(input: {
+    name: "Tecnologia",
+    description: "Curso de Tecnologia",
+  }) {
+    id
+    name
+    description
+  }
+}
+```
+
+Isso insere uma nova categoria no banco e retorna `id`, `name` e `description` da categoria criada.
+
+### Listar categorias (Query)
+
+Para buscar todas as categorias:
+
+```graphql
+query queryCategories {
+  categories {
+    id
+    name
+    description
+  }
+}
+```
+
+A resposta será uma lista com todas as categorias cadastradas.
+
+## Fluxo resumido
+
+1. **Criar o projeto:** `go mod init` → `go run github.com/99designs/gqlgen init` → editar o schema → `go run github.com/99designs/gqlgen generate`
+2. **Preparar o banco:** criar o arquivo `data.db` e a tabela `categories` com `sqlite3`
+3. **Subir o servidor:** `go run ./cmd/server`
+4. **Testar:** abrir http://localhost:8080/ e usar as mutations e queries acima
+
+## Estrutura principal
+
+- `graph/schema.graphqls` – definição do schema GraphQL (tipos, queries, mutations)
+- `graph/schema.resolvers.go` – implementação dos resolvers (lógica das queries e mutations)
+- `internal/database/` – acesso ao SQLite (ex.: categorias)
+- `cmd/server/` – ponto de entrada do servidor HTTP e GraphQL
+
+## Links úteis
+
+- **[gqlgen](https://gqlgen.com/)** – biblioteca oficial para construir servidores GraphQL em Go com abordagem schema-first, type-safety e codegen. Documentação, getting started e referência da API.
