@@ -263,10 +263,46 @@ Cada linguagem possui documentação com referência de API, tutoriais e guias d
 
 ---
 
+## Instalando compilador e plugins
+
+Para gerar código gRPC a partir dos arquivos `.proto`, é necessário instalar o compilador **Protocol Buffers** (`protoc`) e os **plugins** da linguagem que você vai usar. Abaixo, um guia resumido para **Go** (o fluxo é análogo para outras linguagens).
+
+### Pré-requisitos
+
+- **Go** — uma das duas últimas versões principais ([Guia de instalação do Go](https://go.dev/doc/install)).
+- **Compilador Protocol Buffers** — `protoc`, versão 3 ([Protoc Installation](https://protobuf.dev/programming-guides/protoc-installation/)).
+- **Plugins do Go** para o compilador:
+  1. Instale os plugins:
+     ```sh
+     go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
+     go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
+     ```
+  2. Coloque o diretório dos binários do Go no `PATH` para o `protoc` encontrar os plugins:
+     ```sh
+     export PATH="$PATH:$(go env GOPATH)/bin"
+     ```
+
+### Gerando código a partir do `.proto`
+
+No diretório do seu projeto (onde está o `.proto`), execute algo como:
+
+```sh
+protoc --go_out=. --go_opt=paths=source_relative \
+    --go-grpc_out=. --go-grpc_opt=paths=source_relative \
+    helloworld/helloworld.proto
+```
+
+Isso gera os arquivos de mensagens (ex.: `helloworld.pb.go`) e o código gRPC de cliente/servidor (ex.: `helloworld_grpc.pb.go`).
+
+Para outros idiomas e detalhes completos (exemplo funcional, adicionar novos métodos, etc.), consulte o **[Quick start — gRPC em Go](https://grpc.io/docs/languages/go/quickstart/)**.
+
+---
+
 ## Referências
 
 - [Protocol Buffers — Documentação oficial](https://protobuf.dev/)
 - [gRPC — Site oficial](https://grpc.io/)
+- [Quick start — gRPC em Go](https://grpc.io/docs/languages/go/quickstart/)
 - [Introdução ao gRPC](https://grpc.io/docs/what-is-grpc/introduction/)
 - [Linguagens suportadas](https://grpc.io/docs/languages/)
 - [Documentação gRPC](https://grpc.io/docs)
