@@ -13,6 +13,76 @@ Principais características:
 
 ---
 
+## RPC — Remote Procedure Call (Client → Server)
+
+**RPC** (Remote Procedure Call) é um modelo de comunicação em que um programa **cliente** invoca uma função ou método que está sendo executado em outro processo ou máquina — o **servidor** — como se fosse uma chamada local.
+
+Fluxo resumido:
+
+1. **Cliente**: envia uma requisição chamando um método remoto (com parâmetros serializados).
+2. **Rede**: a mensagem trafega entre cliente e servidor.
+3. **Servidor**: recebe a requisição, executa o método e serializa o resultado.
+4. **Cliente**: recebe a resposta e segue a execução como em uma chamada local.
+
+No gRPC, o cliente usa um *stub* (gerado a partir do `.proto`) que expõe os mesmos métodos do servidor, abstraindo a complexidade da rede e da serialização.
+
+```
+[Cliente]  ---- requisição (método + params) ---->  [Servidor]
+[Cliente]  <---- resposta (resultado) ------------  [Servidor]
+```
+
+---
+
+## Protocol Buffers
+
+**Protocol Buffers** (protobuf) é o mecanismo de serialização estruturada usado por padrão no gRPC. Desenvolvido pelo Google, permite definir a estrutura dos dados em arquivos `.proto` e gerar código em várias linguagens para ler e escrever esses dados de forma eficiente.
+
+- **IDL**: os arquivos `.proto` servem como contrato (interface) entre cliente e servidor.
+- **Serialização binária**: os dados são codificados em formato binário compacto, menor e mais rápido que texto (ex.: JSON).
+- **Tipagem**: campos têm tipo definido (string, int32, mensagens aninhadas, etc.), o que evita erros e facilita evolução da API com compatibilidade (ex.: campos opcionais, números de campo fixos).
+
+Exemplo de definição:
+
+```protobuf
+message Person {
+  string name = 1;
+  int32 id = 2;
+  bool active = 3;
+}
+```
+
+O compilador `protoc` gera classes (ou structs) na linguagem escolhida para manipular essas mensagens.
+
+---
+
+## Protocol Buffers vs JSON
+
+| Aspecto | Protocol Buffers | JSON |
+|--------|------------------|------|
+| **Formato** | Binário | Texto (legível) |
+| **Tamanho** | Menor (payload mais compacto) | Maior (nomes de campos repetidos, sintaxe) |
+| **Velocidade** | Serialização/deserialização geralmente mais rápida | Mais lenta e mais custo de CPU |
+| **Legibilidade** | Não legível diretamente (precisa de ferramentas) | Legível em qualquer editor |
+| **Schema** | Obrigatório (arquivo `.proto`) | Opcional (sem validação nativa de tipos) |
+| **Uso típico** | Comunicação serviço-a-serviço, performance, gRPC | APIs REST, integração com front-end, debug manual |
+
+**Resumo**: Protobuf é melhor para desempenho e eficiência entre serviços; JSON é mais conveniente para APIs voltadas a humanos e para inspeção manual (logs, Postman, etc.).
+
+---
+
+## HTTP/2
+
+O gRPC usa **HTTP/2** como camada de transporte (não HTTP/1.1). Isso traz:
+
+- **Multiplexação**: várias requisições/respostas no mesmo canal TCP, sem bloquear umas às outras.
+- **Compressão de cabeçalhos (HPACK)**: menos overhead por requisição.
+- **Streaming bidirecional**: cliente e servidor podem enviar múltiplas mensagens em sequência na mesma conexão.
+- **Um único canal**: reduz número de conexões e latência em cenários com muitas chamadas.
+
+Assim, o gRPC combina o modelo RPC + Protocol Buffers com as vantagens do HTTP/2 para comunicação eficiente e adequada a microserviços e streaming.
+
+---
+
 ## Em quais casos podemos utilizar?
 
 O gRPC é indicado quando você precisa de:
