@@ -70,6 +70,38 @@ O compilador `protoc` gera classes (ou structs) na linguagem escolhida para mani
 
 ---
 
+## REST vs gRPC
+
+| Aspecto | REST | gRPC |
+|--------|------|------|
+| **Modelo** | Recursos (URLs) + verbos HTTP (GET, POST, PUT, DELETE) | Métodos RPC definidos no contrato (`.proto`) |
+| **Formato** | Geralmente JSON (texto) | Protocol Buffers (binário) por padrão |
+| **Transporte** | HTTP/1.1 (comum) ou HTTP/2 | HTTP/2 |
+| **Contrato** | Documentação (OpenAPI, etc.) ou convenção | Schema obrigatório (`.proto`) com geração de código |
+| **Streaming** | Limitado (SSE, chunked) | Nativo: server, client e bidirectional |
+| **Performance** | Boa; overhead de texto e múltiplas requisições | Melhor: payload menor, multiplexação, uma conexão |
+| **Browser** | Suporte nativo (fetch, XMLHttpRequest) | Requer gRPC-Web ou proxy |
+| **Debug / ferramentas** | Fácil (curl, Postman, DevTools) | Requer ferramentas que entendam protobuf |
+| **Adoção** | Muito usada em APIs públicas e front-end | Comum em back-end, microserviços, sistemas internos |
+
+**Quando preferir REST:** APIs públicas, integração com front-end web, ecossistema já em REST, necessidade de debug simples e ferramentas universais.
+
+**Quando preferir gRPC:** Comunicação entre serviços, baixa latência, alto throughput, streaming real, contratos fortes e código gerado em várias linguagens.
+
+### Resumo comparativo: Texto/JSON (REST) vs Protocol Buffers (gRPC)
+
+| Texto/JSON (REST) | Protocol Buffers (gRPC) |
+|-------------------|-------------------------|
+| Texto/JSON | Protocol Buffers |
+| Undirecional | Bidirecional e assíncrono |
+| Alta latência | Baixa latência |
+| Sem contrato (maior chance de erros) | Contrato definido (`.proto`) |
+| Sem suporte a streaming (Request/Response) | Suporte a streaming |
+| Design pré-definido | Design é livre |
+| Biblioteca de terceiros | Geração de código |
+
+---
+
 ## HTTP/2
 
 O gRPC usa **HTTP/2** como camada de transporte (não HTTP/1.1). Isso traz:
