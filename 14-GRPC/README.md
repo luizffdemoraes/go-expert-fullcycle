@@ -83,6 +83,96 @@ Assim, o gRPC combina o modelo RPC + Protocol Buffers com as vantagens do HTTP/2
 
 ---
 
+## Tipos de API gRPC
+
+O gRPC suporta quatro tipos de chamada, definidos no `.proto` pela assinatura do método (uma requisição, uma resposta ou uso de `stream`).
+
+### gRPC — API "Unary"
+
+Uma requisição, uma resposta. É o modelo mais simples, equivalente a uma chamada de função remota clássica.
+
+- **Cliente**: envia **uma** mensagem e espera **uma** resposta.
+- **Servidor**: processa a mensagem e devolve **uma** resposta.
+
+```protobuf
+rpc GetUser (GetUserRequest) returns (GetUserResponse);
+```
+
+```
+[Cliente]  ---- request ---->  [Servidor]
+[Cliente]  <---- response ---  [Servidor]
+```
+
+---
+
+### gRPC — API "Server streaming"
+
+O cliente envia uma requisição e o servidor responde com um **fluxo** de mensagens.
+
+- **Cliente**: envia **uma** mensagem.
+- **Servidor**: envia **várias** mensagens em sequência (stream).
+
+Útil para: listagens grandes, notificações em tempo real, envio de chunks de dados (ex.: arquivo, feed de eventos).
+
+```protobuf
+rpc ListItems (ListRequest) returns (stream Item);
+```
+
+```
+[Cliente]  ---- request ---->  [Servidor]
+[Cliente]  <---- msg 1 ------  [Servidor]
+[Cliente]  <---- msg 2 ------  [Servidor]
+[Cliente]  <---- msg N ------  [Servidor]
+```
+
+---
+
+### gRPC — API "Client streaming"
+
+O cliente envia um **fluxo** de mensagens; o servidor processa e devolve **uma** resposta (geralmente ao final).
+
+- **Cliente**: envia **várias** mensagens em sequência.
+- **Servidor**: envia **uma** resposta (tipicamente após receber e processar o stream).
+
+Útil para: upload em chunks, envio de lotes de eventos ou métricas, agregação no servidor.
+
+```protobuf
+rpc UploadLogs (stream LogEntry) returns (UploadResult);
+```
+
+```
+[Cliente]  ---- msg 1 ---->  [Servidor]
+[Cliente]  ---- msg 2 ---->  [Servidor]
+[Cliente]  ---- msg N ---->  [Servidor]
+[Cliente]  <---- response -  [Servidor]
+```
+
+---
+
+### gRPC — API "Bidirectional streaming"
+
+Cliente e servidor enviam **fluxos** de mensagens ao mesmo tempo, de forma independente, na mesma conexão.
+
+- **Cliente**: envia várias mensagens e pode receber várias ao longo do tempo.
+- **Servidor**: envia várias mensagens e pode receber várias ao longo do tempo.
+- A ordem e o momento de envio/recebimento podem ser independentes em cada direção.
+
+Útil para: chat, jogos em tempo real, cooperação em tempo real, pipelines de processamento.
+
+```protobuf
+rpc Chat (stream ChatMessage) returns (stream ChatMessage);
+```
+
+```
+[Cliente]  ---- msg ---->  [Servidor]
+[Cliente]  <---- msg ----  [Servidor]
+[Cliente]  ---- msg ---->  [Servidor]
+[Cliente]  <---- msg ----  [Servidor]
+         ... (ambos podem enviar quando quiserem)
+```
+
+---
+
 ## Em quais casos podemos utilizar?
 
 O gRPC é indicado quando você precisa de:
