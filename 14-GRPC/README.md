@@ -70,6 +70,21 @@ O compilador `protoc` gera classes (ou structs) na linguagem escolhida para mani
 
 ---
 
+## gRPC vs Protocol Buffers
+
+**gRPC** e **Protocol Buffers** não são alternativas: trabalham juntos. O Protocol Buffers cuida da forma dos dados e do contrato; o gRPC cuida da comunicação remota (RPC) e do transporte.
+
+| Aspecto | Protocol Buffers | gRPC |
+|--------|-------------------|------|
+| **O que é** | Mecanismo de serialização estruturada e linguagem de definição (IDL) em arquivos `.proto`. | Framework de RPC (Remote Procedure Call) para chamar métodos entre cliente e servidor. |
+| **Papel** | Define *como* os dados são estruturados e serializados (mensagens, tipos, campos). | Define *como* cliente e servidor se comunicam (métodos, streaming, transporte HTTP/2). |
+| **Escopo** | Serialização + contrato dos dados. Pode ser usado sem gRPC (ex.: persistência, filas, outras APIs). | Chamadas remotas, streaming, load balancing, auth. Usa protobuf por padrão, mas pode usar outros formatos. |
+| **Documentação** | [Protocol Buffers — protobuf.dev](https://protobuf.dev/) | [gRPC — grpc.io](https://grpc.io/) |
+
+**Resumo**: Protocol Buffers = *formato e contrato dos dados*. gRPC = *framework de RPC* que usa esse contrato e esse formato para comunicação entre serviços. Em um projeto gRPC típico, você escreve os `.proto` (protobuf) e o gRPC usa esses arquivos para gerar stubs e fazer as chamadas remotas.
+
+---
+
 ## REST vs gRPC
 
 | Aspecto | REST | gRPC |
@@ -250,6 +265,8 @@ Cada linguagem possui documentação com referência de API, tutoriais e guias d
 
 ## Referências
 
+- [Protocol Buffers — Documentação oficial](https://protobuf.dev/)
+- [gRPC — Site oficial](https://grpc.io/)
 - [Introdução ao gRPC](https://grpc.io/docs/what-is-grpc/introduction/)
 - [Linguagens suportadas](https://grpc.io/docs/languages/)
 - [Documentação gRPC](https://grpc.io/docs)
