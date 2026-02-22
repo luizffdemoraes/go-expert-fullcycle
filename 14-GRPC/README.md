@@ -46,6 +46,25 @@ No arquivo `proto/course_category.proto` foram adicionadas a mensagem **`Categor
 
 Depois de alterar o `.proto`, é necessário regenerar o código com `protoc --go_out=. --go-grpc_out=. proto/course_category.proto` e implementar o método `ListCategories` em `internal/service/category.go` (chamando `CategoryDB.FindAll()` e montando o `CategoryList`).
 
+### Implementando ListCategories
+
+A implementação do RPC **ListCategories** está em `internal/service/category.go`. Ela atende chamadas que não enviam parâmetros (tipo `*pb.Blank`) e devolve todas as categorias persistidas no banco no formato `*pb.CategoryList`.
+
+**Fluxo do método:**
+
+1. O servidor gRPC chama `ListCategories(ctx, req)` com `req` do tipo `*pb.Blank` (sem uso no método; o contrato exige uma mensagem de entrada).
+2. O serviço chama `c.CategoryDB.FindAll()`, que consulta a tabela `categories` e retorna um slice de `database.Category` ou erro.
+3. O serviço converte cada `database.Category` em `*pb.Category` (id, name, description) e monta um slice `categoriesResponse`.
+4. Retorna `&pb.CategoryList{ Categories: categoriesResponse }`. Em caso de erro do banco, o erro é repassado e o gRPC devolve o status apropriado ao cliente.
+
+**Motivação da implementação:**
+
+- **Expor o FindAll via gRPC:** A camada de dados já oferece `FindAll()` para categorias. O `ListCategories` é a porta de entrada gRPC para essa operação: o cliente chama um único RPC e recebe a lista completa, sem precisar de filtros ou paginação (que podem ser adicionados depois com novas mensagens/RPCs).
+- **Resposta tipada e consistente:** A resposta é sempre `CategoryList` com o campo `categories` (repeated `Category`), o que mantém o contrato estável e previsível para qualquer cliente (Evans, outro serviço, app mobile).
+- **Reuso da mesma camada:** Tanto `CreateCategory` quanto `ListCategories` usam o mesmo `CategoryDB`; a única diferença é a operação (Create vs FindAll) e o mapeamento do resultado para as mensagens do proto (`*pb.Category` ou `*pb.CategoryList`).
+
+Com isso, o `CategoryService` passa a oferecer criação e listagem de categorias; no Evans, após `package pb` e `service CategoryService`, é possível chamar tanto `CreateCategory` quanto `ListCategories`.
+
 ### Criando servidor gRPC
 
 O ponto de entrada do servidor está em **`cmd/grpcServer/main.go`**. Ele sobe o gRPC na porta **50051** e registra o `CategoryService` com reflexão habilitada (útil para ferramentas como `grpcurl` ou **Evans**).
