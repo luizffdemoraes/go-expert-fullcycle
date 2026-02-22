@@ -27,6 +27,25 @@ A implementação fica em `internal/service/category.go` e conecta o contrato gR
 - **`NewCategoryService(categoryDB)`** — construtor; o serviço é registrado no `grpc.Server` com `pb.RegisterCategoryServiceServer(grpcServer, categoryService)`.
 - **Fluxo de `CreateCategory`:** servidor recebe `*pb.CreateCategoryRequest` → chama `CategoryDB.Create(req.Name, req.Description)` → retorna `*pb.CategoryResponse` com a categoria (id, name, description) ou repassa o erro.
 
+### Criando CategoryList no proto
+
+No arquivo `proto/course_category.proto` foram adicionadas a mensagem **`CategoryList`** e o RPC **`ListCategories`** para permitir que o cliente obtenha a lista de todas as categorias em uma única chamada.
+
+**O que foi adicionado no `.proto`:**
+
+- **`message blank {}`** — Mensagem vazia usada como tipo de requisição quando o RPC não precisa de parâmetros de entrada (só “listar tudo”).
+- **`message CategoryList { repeated Category categories = 1; }`** — Mensagem que agrupa várias categorias. No Protocol Buffers, a resposta de um RPC precisa ser uma única mensagem; para devolver uma **lista** de categorias, usa-se uma mensagem que contém um campo `repeated Category`.
+- **`rpc ListCategories (blank) returns (CategoryList);`** — Método que recebe nada (ou um `blank`) e retorna um `CategoryList`, ou seja, a lista de categorias cadastradas.
+
+**Motivação da implementação:**
+
+- **Listar categorias via API:** O cliente precisa de uma operação “listar todas as categorias” (por exemplo para montar um menu, um filtro ou uma tela de administração). O `ListCategories` expõe exatamente isso no contrato gRPC.
+- **Contrato explícito:** Definir `CategoryList` no `.proto` deixa o formato da resposta documentado e tipado: o cliente sempre recebe uma mensagem com o campo `categories` (array de `Category`). Isso evita ambiguidade e facilita a evolução da API (por exemplo, no futuro adicionar metadados como `total_count` na mesma mensagem).
+- **Reuso da mensagem `Category`:** A lista reutiliza a mesma mensagem `Category` já usada em `CreateCategory`, mantendo o contrato consistente e evitando duplicação.
+- **Alinhamento com a camada de dados:** A camada `internal/database` já oferece `FindAll()` para categorias. O `ListCategories` no serviço faz a ponte entre esse método e o contrato gRPC, devolvendo as categorias no formato `CategoryList`.
+
+Depois de alterar o `.proto`, é necessário regenerar o código com `protoc --go_out=. --go-grpc_out=. proto/course_category.proto` e implementar o método `ListCategories` em `internal/service/category.go` (chamando `CategoryDB.FindAll()` e montando o `CategoryList`).
+
 ### Criando servidor gRPC
 
 O ponto de entrada do servidor está em **`cmd/grpcServer/main.go`**. Ele sobe o gRPC na porta **50051** e registra o `CategoryService` com reflexão habilitada (útil para ferramentas como `grpcurl` ou **Evans**).
