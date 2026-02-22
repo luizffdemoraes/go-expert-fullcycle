@@ -13,6 +13,31 @@ Principais características:
 
 ---
 
+## Este projeto
+
+Este repositório contém uma implementação em **Go** de um serviço gRPC para **categorias e cursos**: contrato da API em Protocol Buffers e camada de persistência em banco de dados, prontos para serem usados por um servidor e clientes gRPC.
+
+### Para que serve
+
+- **Expor uma API gRPC** de categorias: no contrato (`.proto`) está definido o `CategoryService` com o método **CreateCategory** (chamada unária: uma requisição, uma resposta). Outros métodos e o serviço de cursos podem ser estendidos a partir da mesma base.
+- **Persistir dados**: a camada em `internal/database` implementa o acesso a tabelas **categories** e **courses** (PostgreSQL-compatível), com criação de categorias, listagem, e consultas por curso ou por categoria — essa camada será usada pelo handler gRPC para ler e gravar no banco.
+
+### Como funciona
+
+1. **Contrato (proto)** — Em `proto/course_category.proto` estão definidas as mensagens (`Category`, `CreateCategoryRequest`, `CategoryResponse`) e o serviço `CategoryService` com `CreateCategory`. Esse arquivo é a fonte da verdade para cliente e servidor; o código Go de stubs e mensagens é gerado com `protoc` (veja [Instalando compilador e plugins](#instalando-compilador-e-plugins)).
+2. **Camada de dados** — Em `internal/database`:
+   - **Category**: `Create`, `FindAll`, `FindByCourseID` — cria categoria (com UUID), lista todas e busca a categoria de um curso.
+   - **Course**: `Create`, `FindAll`, `FindByCategoryID` — cria curso vinculado a uma categoria, lista todos e lista cursos por categoria.
+3. **Fluxo (quando o servidor gRPC estiver implementado)** — O cliente chama `CreateCategory`; o servidor recebe a requisição, valida, chama `Category.Create` no banco e devolve `CategoryResponse` com a categoria criada.
+
+### Motivação
+
+- Praticar **gRPC em Go** com contrato primeiro (`.proto`) e código gerado.
+- Separar bem **contrato da API** (proto), **regra/persistência** (database) e, futuramente, **transporte** (servidor gRPC).
+- Ter uma base para evoluir para mais métodos (listar categorias, criar curso, etc.) e para outros tipos de chamada (streaming), mantendo a mesma estrutura de projeto.
+
+---
+
 ## RPC — Remote Procedure Call (Client → Server)
 
 **RPC** (Remote Procedure Call) é um modelo de comunicação em que um programa **cliente** invoca uma função ou método que está sendo executado em outro processo ou máquina — o **servidor** — como se fosse uma chamada local.
