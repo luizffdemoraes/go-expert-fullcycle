@@ -27,6 +27,24 @@ A implementação fica em `internal/service/category.go` e conecta o contrato gR
 - **`NewCategoryService(categoryDB)`** — construtor; o serviço é registrado no `grpc.Server` com `pb.RegisterCategoryServiceServer(grpcServer, categoryService)`.
 - **Fluxo de `CreateCategory`:** servidor recebe `*pb.CreateCategoryRequest` → chama `CategoryDB.Create(req.Name, req.Description)` → retorna `*pb.CategoryResponse` com a categoria (id, name, description) ou repassa o erro.
 
+### Criando servidor gRPC
+
+O ponto de entrada do servidor está em **`internal/cmd/grpcServer/main.go`**. Ele sobe o gRPC na porta **50051** e registra o `CategoryService` com reflexão habilitada (útil para ferramentas como `grpcurl`/evans).
+
+**Ordem da implementação:**
+
+1. **Conexão com o banco** — `sql.Open("sqlite3", "db.sqlite")` (ou troque para PostgreSQL conforme a camada em `internal/database`). O `defer db.Close()` garante o fechamento ao encerrar o processo.
+
+2. **Camada de dados** — Cria-se o repositório de categorias: `categoryDB := database.NewCategory(db)`.
+
+3. **Camada de serviço** — Cria-se o serviço que implementa o gRPC: `categoryService := service.NewCategoryService(*categoryDB)`. Esse é o tipo que implementa `CategoryServiceServer` e será registrado no servidor.
+
+4. **Servidor gRPC** — `grpc.NewServer()` cria o servidor; `pb.RegisterCategoryServiceServer(grpcServer, categoryService)` registra o `CategoryService`; `reflection.Register(grpcServer)` ativa a reflexão para descoberta de serviços.
+
+5. **Listen e Serve** — `net.Listen("tcp", ":50051")` abre a porta; `grpcServer.Serve(lis)` bloqueia e atende as chamadas RPC (por exemplo, `CreateCategory`).
+
+**Como rodar:** a partir da raiz do projeto, execute o pacote do servidor (ex.: `go run ./internal/cmd/grpcServer` ou, se o módulo estiver em `cmd/grpcServer`, `go run .` de dentro desse diretório). O servidor fica ouvindo em `localhost:50051` até ser interrompido.
+
 ### Motivação
 
 - Praticar gRPC em Go com contrato primeiro (`.proto`) e código gerado.
