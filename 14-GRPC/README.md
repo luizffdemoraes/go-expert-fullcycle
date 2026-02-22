@@ -309,15 +309,31 @@ Para gerar código gRPC a partir dos arquivos `.proto`, é necessário instalar 
 
 ### Gerando código a partir do `.proto`
 
-No diretório do seu projeto (onde está o `.proto`), execute algo como:
+No diretório raiz do projeto (onde estão a pasta `proto/` e o `go.mod`):
 
-```sh
-protoc --go_out=. --go_opt=paths=source_relative \
-    --go-grpc_out=. --go-grpc_opt=paths=source_relative \
-    helloworld/helloworld.proto
-```
+1. **Recarregar o ambiente** (se o `protoc` foi instalado em `~/.local/bin` ou os plugins em `$(go env GOPATH)/bin` depois que você abriu o terminal):
+   ```sh
+   source ~/.bashrc
+   ```
+   **O que faz:** Lê de novo o arquivo `~/.bashrc` no shell atual e aplica as alterações (por exemplo, o `PATH` atualizado com `~/.local/bin` e `$(go env GOPATH)/bin`). Assim o comando `protoc` e os plugins `protoc-gen-go` e `protoc-gen-go-grpc` passam a ser encontrados. Se você abriu um terminal novo depois de configurar o `PATH` no `.bashrc`, pode pular este passo.
 
-Isso gera os arquivos de mensagens (ex.: `helloworld.pb.go`) e o código gRPC de cliente/servidor (ex.: `helloworld_grpc.pb.go`).
+2. **Rodar o compilador** para gerar o código Go a partir do `.proto` deste projeto:
+   ```sh
+   protoc --go_out=. --go-grpc_out=. proto/course_category.proto
+   ```
+   **O que faz:** O `protoc` lê o arquivo `proto/course_category.proto` e usa os plugins `protoc-gen-go` e `protoc-gen-go-grpc` para gerar código Go. O `--go_out=.` gera as structs das mensagens (ex.: `Category`, `CreateCategoryRequest`, `CategoryResponse`) e o `--go-grpc_out=.` gera os stubs de cliente e servidor do `CategoryService`. Os arquivos são criados no caminho definido por `go_package` no `.proto` (neste projeto, `internal/pb/`: `course_category.pb.go` e `course_category_grpc.pb.go`).
+
+### Arquivos gerados
+
+Após executar o comando, são criados em `internal/pb/` dois arquivos. **Não edite esses arquivos** — eles são regenerados sempre que você rodar o `protoc` de novo.
+
+| Arquivo | Gerado por | Para que serve | Funcionalidade principal |
+|---------|------------|----------------|---------------------------|
+| **`course_category.pb.go`** | `protoc-gen-go` (`--go_out`) | Representar em Go as **mensagens** definidas no `.proto`. | Contém as structs `Category`, `CreateCategoryRequest` e `CategoryResponse`, com getters, métodos de serialização/deserialização (Protocol Buffers) e suporte a reflexão. O código que envia ou recebe dados do gRPC usa esses tipos. |
+| **`course_category_grpc.pb.go`** | `protoc-gen-go-grpc` (`--go-grpc_out`) | Expor a **API do serviço** para cliente e servidor. | **Cliente:** interface `CategoryServiceClient` e implementação que chama `CreateCategory` na conexão gRPC. **Servidor:** interface `CategoryServiceServer` (método `CreateCategory` que você implementa), `UnimplementedCategoryServiceServer` (para embutir e compatibilidade) e `RegisterCategoryServiceServer` para registrar o serviço no `grpc.Server`. |
+
+- **`course_category.pb.go`** — Você usa as structs e tipos gerados em qualquer lugar que precise montar requisições, respostas ou acessar campos (ex.: `in.GetName()`, `&pb.Category{...}`).
+- **`course_category_grpc.pb.go`** — No **servidor**, você cria um tipo que implementa `CategoryServiceServer` (embutindo `UnimplementedCategoryServiceServer`), implementa `CreateCategory` (por exemplo chamando a camada de banco) e chama `RegisterCategoryServiceServer`. No **cliente**, você usa `NewCategoryServiceClient(conn)` e chama `CreateCategory` para falar com o servidor.
 
 Para outros idiomas e detalhes completos (exemplo funcional, adicionar novos métodos, etc.), consulte o **[Quick start — gRPC em Go](https://grpc.io/docs/languages/go/quickstart/)**.
 
