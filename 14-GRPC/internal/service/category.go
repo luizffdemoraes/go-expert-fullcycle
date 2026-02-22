@@ -9,25 +9,23 @@ import (
 
 type CategoryService struct {
 	pb.UnimplementedCategoryServiceServer
-	CategoryDB database.Category
+	CategoryDB *database.Category
 }
 
-func NewCategoryService(categoryDB database.Category) *CategoryService {
+func NewCategoryService(categoryDB *database.Category) *CategoryService {
 	return &CategoryService{
 		CategoryDB: categoryDB,
 	}
 }
 
-func (c *CategoryService) CreateCategory(ctx context.Context, req *pb.CreateCategoryRequest) (*pb.CategoryResponse, error) {
+func (c *CategoryService) CreateCategory(ctx context.Context, req *pb.CreateCategoryRequest) (*pb.Category, error) {
 	category, err := c.CategoryDB.Create(req.Name, req.Description)
 	if err != nil {
 		return nil, err
 	}
-	return &pb.CategoryResponse{
-		Category: &pb.Category{
-			Id:          category.ID,
-			Name:        category.Name,
-			Description: category.Description,
-		},
+	return &pb.Category{
+		Id:          category.ID,
+		Name:        category.Name,
+		Description: category.Description,
 	}, nil
 }

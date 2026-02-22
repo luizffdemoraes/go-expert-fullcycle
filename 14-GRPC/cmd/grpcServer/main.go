@@ -1,4 +1,4 @@
-package grpcserver
+package main
 
 import (
 	"database/sql"
@@ -9,6 +9,8 @@ import (
 	"github.com/devfullcycle/14-GRPC/internal/service"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
+
+	_ "github.com/mattn/go-sqlite3"
 )
 
 func main() {
@@ -19,7 +21,7 @@ func main() {
 	defer db.Close()
 
 	categoryDB := database.NewCategory(db)
-	categoryService := service.NewCategoryService(*categoryDB)
+	categoryService := service.NewCategoryService(categoryDB)
 
 	grpcServer := grpc.NewServer()
 	pb.RegisterCategoryServiceServer(grpcServer, categoryService)

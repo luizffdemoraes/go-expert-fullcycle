@@ -29,7 +29,7 @@ A implementação fica em `internal/service/category.go` e conecta o contrato gR
 
 ### Criando servidor gRPC
 
-O ponto de entrada do servidor está em **`internal/cmd/grpcServer/main.go`**. Ele sobe o gRPC na porta **50051** e registra o `CategoryService` com reflexão habilitada (útil para ferramentas como `grpcurl`/evans).
+O ponto de entrada do servidor está em **`cmd/grpcServer/main.go`**. Ele sobe o gRPC na porta **50051** e registra o `CategoryService` com reflexão habilitada (útil para ferramentas como `grpcurl` ou **Evans**).
 
 **Ordem da implementação:**
 
@@ -43,7 +43,77 @@ O ponto de entrada do servidor está em **`internal/cmd/grpcServer/main.go`**. E
 
 5. **Listen e Serve** — `net.Listen("tcp", ":50051")` abre a porta; `grpcServer.Serve(lis)` bloqueia e atende as chamadas RPC (por exemplo, `CreateCategory`).
 
-**Como rodar:** a partir da raiz do projeto, execute o pacote do servidor (ex.: `go run ./internal/cmd/grpcServer` ou, se o módulo estiver em `cmd/grpcServer`, `go run .` de dentro desse diretório). O servidor fica ouvindo em `localhost:50051` até ser interrompido.
+**Como rodar:** na raiz do projeto: `go run cmd/grpcServer/main.go`. O servidor fica ouvindo em `localhost:50051` até ser interrompido.
+
+### Rodando o projeto e testando com Evans
+
+**[Evans](https://github.com/ktr0731/evans)** é um cliente gRPC em modo REPL (linha de comando interativa). Ele usa a **reflexão** do servidor para listar serviços e métodos e permite chamar RPCs sem escrever código cliente. Útil para testar a API logo após subir o servidor.
+
+**1. Instalar o Evans**
+
+```sh
+go install github.com/ktr0731/evans@latest
+```
+
+**Motivo:** O Evans fica em `$(go env GOPATH)/bin`. Garanta que esse diretório esteja no `PATH` (ex.: `export PATH="$PATH:$(go env GOPATH)/bin"`).
+
+**2. Subir o servidor gRPC**
+
+Em um terminal, na raiz do projeto:
+
+```sh
+go run cmd/grpcServer/main.go
+```
+
+**Motivo:** O servidor precisa estar rodando na porta **50051** para o Evans (ou qualquer cliente) se conectar e chamar `CreateCategory`.
+
+**3. Criar o banco e a tabela (primeira vez)**
+
+O servidor usa SQLite com o arquivo `db.sqlite`. Se o arquivo ou a tabela não existir, crie:
+
+```sh
+sqlite3 db.sqlite
+```
+
+Dentro do SQLite:
+
+```sql
+create table categories (id string, name string, description string);
+```
+
+**Motivo:** A camada `internal/database` espera a tabela `categories` com as colunas `id`, `name` e `description`. Sem ela, `CreateCategory` falha ao persistir.
+
+**4. Abrir o Evans em modo REPL**
+
+Em **outro** terminal (com o servidor ainda rodando):
+
+```sh
+evans -r repl
+```
+
+**Motivo:** `-r` usa **reflexão** no servidor (por isso o `reflection.Register(grpcServer)` no `main.go`). O Evans descobre sozinho os pacotes, serviços e métodos disponíveis em `localhost:50051`.
+
+**5. No Evans, usar nesta ordem**
+
+| Comando | O que faz |
+|---------|-----------|
+| `package pb` | Seleciona o pacote do `.proto` (definido em `option go_package` / package no proto). Sem isso, o Evans não sabe em qual serviço atuar. |
+| `service CategoryService` | Seleciona o serviço `CategoryService`. Sem isso, o comando `call` não sabe qual RPC usar. |
+| `call CreateCategory` | Chama o RPC `CreateCategory`; o Evans pede os campos da requisição (name, description) e exibe a resposta. |
+
+**Motivo:** O Evans exige que **package** e **service** estejam selecionados antes de `call`. Caso contrário aparecem erros como *"package unselected"* ou *"service unselected"*.
+
+**Resumo:** Instale o Evans → suba o servidor → crie a tabela se necessário → em outro terminal rode `evans -r repl` → `package pb` → `service CategoryService` → `call CreateCategory`.
+
+### Alterações no contrato (.proto): regenerar código
+
+Sempre que você **alterar** o arquivo `proto/course_category.proto` (novas mensagens, novos métodos, novos campos), é necessário **regenerar** o código Go para que `internal/pb` e o servidor/serviço continuem alinhados com o contrato. Na raiz do projeto execute:
+
+```sh
+protoc --go_out=. --go-grpc_out=. proto/course_category.proto
+```
+
+**Motivo:** Os arquivos em `internal/pb/*.pb.go` são gerados pelo `protoc`. Eles não são atualizados automaticamente; qualquer mudança no `.proto` exige rodar o comando de novo. Depois, ajuste a implementação em `internal/service` (e no `main` do servidor, se houver novos serviços) conforme o novo contrato.
 
 ### Motivação
 

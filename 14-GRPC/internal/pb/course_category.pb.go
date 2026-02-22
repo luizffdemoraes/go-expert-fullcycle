@@ -190,9 +190,9 @@ const file_proto_course_category_proto_rawDesc = "" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12 \n" +
 	"\vdescription\x18\x02 \x01(\tR\vdescription\"<\n" +
 	"\x10CategoryResponse\x12(\n" +
-	"\bcategory\x18\x01 \x01(\v2\f.pb.CategoryR\bcategory2T\n" +
-	"\x0fCategoryService\x12A\n" +
-	"\x0eCreateCategory\x12\x19.pb.CreateCategoryRequest\x1a\x14.pb.CategoryResponseB\rZ\vinternal/pbb\x06proto3"
+	"\bcategory\x18\x01 \x01(\v2\f.pb.CategoryR\bcategory2L\n" +
+	"\x0fCategoryService\x129\n" +
+	"\x0eCreateCategory\x12\x19.pb.CreateCategoryRequest\x1a\f.pb.CategoryB\rZ\vinternal/pbb\x06proto3"
 
 var (
 	file_proto_course_category_proto_rawDescOnce sync.Once
@@ -215,7 +215,7 @@ var file_proto_course_category_proto_goTypes = []any{
 var file_proto_course_category_proto_depIdxs = []int32{
 	0, // 0: pb.CategoryResponse.category:type_name -> pb.Category
 	1, // 1: pb.CategoryService.CreateCategory:input_type -> pb.CreateCategoryRequest
-	2, // 2: pb.CategoryService.CreateCategory:output_type -> pb.CategoryResponse
+	0, // 2: pb.CategoryService.CreateCategory:output_type -> pb.Category
 	2, // [2:3] is the sub-list for method output_type
 	1, // [1:2] is the sub-list for method input_type
 	1, // [1:1] is the sub-list for extension type_name
