@@ -65,6 +65,28 @@ A implementação do RPC **ListCategories** está em `internal/service/category.
 
 Com isso, o `CategoryService` passa a oferecer criação e listagem de categorias; no Evans, após `package pb` e `service CategoryService`, é possível chamar tanto `CreateCategory` quanto `ListCategories`.
 
+### Buscando uma categoria (GetCategory)
+
+Foi adicionada a operação de **buscar uma categoria pelo ID**: no `.proto` a mensagem **`GetCategoryRequest`** e o RPC **`GetCategory`**, na camada de dados o método **`FindByID`** e no serviço o handler que liga um ao outro.
+
+**O que foi adicionado no `.proto`:**
+
+- **`message GetCategoryRequest { string id = 1; }`** — Requisição com o identificador da categoria a ser buscada.
+- **`rpc GetCategory (GetCategoryRequest) returns (Category);`** — Método que recebe o ID e retorna uma única `Category` (ou erro se não existir).
+
+**Implementação:**
+
+- **Camada de dados** (`internal/database/category.go`): **`FindByID(id string) (Category, error)`** — Executa `SELECT id, name, description FROM categories WHERE id = $1` e devolve a categoria ou erro (ex.: `sql.ErrNoRows` se o ID não existir).
+- **Camada de serviço** (`internal/service/category.go`): **`GetCategory(ctx, req)`** — Recebe `*pb.GetCategoryRequest`, chama `c.CategoryDB.FindByID(req.Id)`, converte o resultado em `*pb.Category` e retorna. Se o banco retornar erro (categoria não encontrada), o erro é repassado e o gRPC traduz em status apropriado (ex.: `NotFound`) para o cliente.
+
+**Motivação da implementação:**
+
+- **Consulta por ID:** O cliente precisa obter os dados de **uma** categoria conhecida (tela de detalhe, formulário de edição, validação antes de vincular a um curso). O `GetCategory` expõe essa consulta de forma explícita no contrato.
+- **Contrato claro:** A requisição é tipada (`GetCategoryRequest` com `id`); a resposta é a mensagem `Category` já usada em criação e listagem. Isso mantém a API consistente e documentada.
+- **Reuso da camada de dados:** O `FindByID` no banco é a única consulta por chave; o serviço apenas delega e mapeia para o tipo do proto, no mesmo padrão de `CreateCategory` e `ListCategories`.
+
+No Evans, após `package pb` e `service CategoryService`, use `call GetCategory` e informe o campo `id` (ex.: um UUID retornado por `CreateCategory` ou `ListCategories`) para testar a busca.
+
 ### Criando servidor gRPC
 
 O ponto de entrada do servidor está em **`cmd/grpcServer/main.go`**. Ele sobe o gRPC na porta **50051** e registra o `CategoryService` com reflexão habilitada (útil para ferramentas como `grpcurl` ou **Evans**).

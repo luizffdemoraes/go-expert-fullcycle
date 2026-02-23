@@ -49,3 +49,15 @@ func (c *CategoryService) ListCategories(ctx context.Context, req *pb.Blank) (*p
 		Categories: categoriesResponse,
 	}, nil
 }
+
+func (c *CategoryService) GetCategory(ctx context.Context, req *pb.GetCategoryRequest) (*pb.Category, error) {
+	category, err := c.CategoryDB.FindByID(req.Id)
+	if err != nil {
+		return nil, err
+	}
+	return &pb.Category{
+		Id:          category.ID,
+		Name:        category.Name,
+		Description: category.Description,
+	}, nil
+}
