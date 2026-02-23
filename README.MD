@@ -26,4 +26,6 @@
 
 [Vendor-Golang](https://go.dev/src/README.vendor)
 
-[Graphql](https://gqlgen.com/)
+[GraphQL](13-GRAPHQL/README.md)
+
+[gRPC](14-GRPC/README.md)
