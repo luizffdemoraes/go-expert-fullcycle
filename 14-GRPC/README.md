@@ -2,6 +2,137 @@
 
 API gRPC em Go para categorias e cursos — contrato em Protocol Buffers, camada de serviço e persistência.
 
+## Índice
+
+**Conceitos (explicação)**
+
+- [O que é gRPC?](#o-que-é-grpc)
+- [RPC — Remote Procedure Call (Client → Server)](#rpc--remote-procedure-call-client--server)
+- [Protocol Buffers](#protocol-buffers)
+- [gRPC vs Protocol Buffers](#grpc-vs-protocol-buffers)
+- [Protocol Buffers vs JSON](#protocol-buffers-vs-json)
+- [HTTP/2](#http2)
+- [Tipos de API gRPC](#tipos-de-api-grpc)
+- [Em quais casos podemos utilizar?](#em-quais-casos-podemos-utilizar)
+- [REST vs gRPC](#rest-vs-grpc)
+- [Linguagens (suporte oficial)](#linguagens-suporte-oficial)
+
+**Este projeto (implementação e uso)**
+
+- [Este projeto](#este-projeto) — [Para que serve](#para-que-serve) · [Como funciona](#como-funciona)
+- [Implementando CreateCategory](#implementando-createcategory)
+- [Criando CategoryList no proto](#criando-categorylist-no-proto)
+- [Implementando ListCategories](#implementando-listcategories)
+- [Buscando uma categoria (GetCategory)](#buscando-uma-categoria-getcategory)
+- [CreateCategoryStream (client streaming)](#createcategorystream-client-streaming)
+- [Trabalhando com streams bidirecionais](#trabalhando-com-streams-bidirecionais-createcategorystreambidirectional)
+- [Criando servidor gRPC](#criando-servidor-grpc)
+- [Rodando o projeto e testando com Evans](#rodando-o-projeto-e-testando-com-evans)
+- [Alterações no contrato (.proto): regenerar código](#alterações-no-contrato-proto-regenerar-código)
+- [Instalando compilador e plugins](#instalando-compilador-e-plugins) — [Pré-requisitos](#pré-requisitos) · [Gerando código a partir do .proto](#gerando-código-a-partir-do-proto) · [Arquivos gerados](#arquivos-gerados)
+- [Referências](#referências)
+
+A ordem do documento é: **conceitos** (o que é gRPC, RPC, Protocol Buffers, comparações, quando usar) → **este projeto** (implementação, servidor, Evans, instalação) → **referências** (links ao final).
+
+---
+
+## O que é gRPC?
+
+**gRPC** (gRPC Remote Procedure Call) é um framework de RPC de alto desempenho, desenvolvido pelo Google e aberto. Permite que um cliente chame métodos em um servidor em outra máquina como se fossem locais.
+
+- **Baseado em contratos**: serviços e métodos definidos em arquivos `.proto`.
+- **Protocol Buffers**: IDL e serialização binária por padrão.
+- **Multiplataforma**: várias linguagens; cliente e servidor podem ser em linguagens diferentes.
+- **HTTP/2**: transporte com multiplexação e streaming.
+
+---
+
+## RPC — Remote Procedure Call (Client → Server)
+
+**RPC** é o modelo em que o **cliente** invoca um método que roda no **servidor** (outro processo/máquina), como uma chamada local.
+
+1. Cliente envia requisição (método + parâmetros serializados).
+2. Servidor executa o método e serializa o resultado.
+3. Cliente recebe a resposta.
+
+No gRPC, o cliente usa um *stub* gerado a partir do `.proto`.
+
+```
+[Cliente]  ---- requisição ---->  [Servidor]
+[Cliente]  <---- resposta -------  [Servidor]
+```
+
+---
+
+## Protocol Buffers
+
+**Protocol Buffers** (protobuf) é o mecanismo de serialização e IDL usado por padrão no gRPC. Você define mensagens em `.proto` e o `protoc` gera código em várias linguagens.
+
+- **IDL**: contrato entre cliente e servidor.
+- **Binário**: payload compacto e rápido.
+- **Tipagem**: campos com tipo definido; evolução compatível.
+
+---
+
+## gRPC vs Protocol Buffers
+
+Não são alternativas: **Protocol Buffers** = formato e contrato dos dados; **gRPC** = framework de RPC que usa esse contrato para comunicação entre cliente e servidor. Em um projeto gRPC você escreve os `.proto` e o gRPC gera stubs e faz as chamadas remotas.
+
+---
+
+## Protocol Buffers vs JSON
+
+| Aspecto | Protocol Buffers | JSON |
+|--------|------------------|------|
+| Formato | Binário | Texto |
+| Tamanho / velocidade | Menor, mais rápido | Maior, mais lento |
+| Schema | Obrigatório (`.proto`) | Opcional |
+| Uso típico | Serviço a serviço, gRPC | APIs REST, front-end, debug |
+
+---
+
+## HTTP/2
+
+O gRPC usa **HTTP/2**: multiplexação, compressão de cabeçalhos (HPACK), streaming bidirecional e uma única conexão para várias requisições.
+
+---
+
+## Tipos de API gRPC
+
+| Tipo | Descrição |
+|------|-----------|
+| **Unary** | Uma requisição, uma resposta. |
+| **Server streaming** | Cliente envia uma mensagem; servidor envia um stream de mensagens. |
+| **Client streaming** | Cliente envia um stream; servidor devolve uma resposta. |
+| **Bidirectional streaming** | Cliente e servidor enviam streams ao mesmo tempo. |
+
+O método **CreateCategory** deste projeto é **Unary**.
+
+---
+
+## Em quais casos podemos utilizar?
+
+gRPC é indicado para: comunicação entre microserviços, APIs de alta performance, streaming, ambientes com várias linguagens, mobile/IoT. Considere REST quando a API for voltada a browsers ou o ecossistema já for REST.
+
+---
+
+## REST vs gRPC
+
+| Aspecto | REST | gRPC |
+|--------|------|------|
+| Modelo | Recursos + verbos HTTP | Métodos RPC (`.proto`) |
+| Formato | Geralmente JSON | Protocol Buffers (binário) |
+| Transporte | HTTP/1.1 comum | HTTP/2 |
+| Streaming | Limitado | Nativo |
+
+**Resumo:** REST para APIs públicas e front-end; gRPC para serviços internos, baixa latência e contratos fortes.
+
+---
+
+## Linguagens (suporte oficial)
+
+gRPC suporta oficialmente: C++, C#/.NET, Dart, Go, Java, Kotlin, Node.js, Objective-C, PHP, Python, Ruby, Swift. Documentação por linguagem em [grpc.io/docs/languages](https://grpc.io/docs/languages/).
+
 ---
 
 ## Este projeto
@@ -117,6 +248,30 @@ Foi adicionado o RPC **CreateCategoryStream**: o cliente envia um **stream** de 
 5. **Não use Ctrl+C** nesse momento — isso **cancela** a chamada (“inputting canceled”) em vez de fechar o stream. Use **Ctrl+D** para finalizar o envio e ver a resposta.
 
 **Resumo:** CreateCategoryStream = client streaming (várias requisições, uma resposta). No Evans, após inserir as informações de cada categoria, use **Ctrl+D** para indicar que não há mais mensagens e receber a `CategoryList` de volta.
+
+### Trabalhando com streams bidirecionais (CreateCategoryStreamBidirectional)
+
+Foi adicionado o RPC **CreateCategoryStreamBidirectional**: cliente e servidor trocam **dois streams** na mesma conexão — o cliente envia um stream de `CreateCategoryRequest` e o servidor envia um stream de `Category` em resposta. Cada mensagem recebida pode ser processada e a resposta correspondente enviada imediatamente, sem esperar o fim do stream do cliente. É um exemplo de **streaming bidirecional**.
+
+**O que foi adicionado no `.proto`:**
+
+- **`rpc CreateCategoryStreamBidirectional (stream CreateCategoryRequest) returns (stream Category);`** — Entrada: stream de requisições (name, description). Saída: stream de categorias criadas. Cliente e servidor podem enviar e receber mensagens ao mesmo tempo, na mesma RPC.
+
+**Funcionamento da implementação:**
+
+- O handler recebe um stream bidirecional (`CategoryService_CreateCategoryStreamBidirectionalServer`), que permite `Recv()` (receber do cliente) e `Send()` (enviar para o cliente) na mesma conexão.
+- Em loop: chama `stream.Recv()` para obter a próxima `CreateCategoryRequest`. Quando o cliente encerra o envio, `Recv()` retorna `io.EOF` e o handler faz `return nil` (fim do stream do servidor).
+- Para **cada** mensagem recebida (antes do EOF): chama `CategoryDB.Create(category.Name, category.Description)` e, em seguida, `stream.Send(&pb.Category{...})` para enviar a categoria criada de volta ao cliente **na hora**. Ou seja, o cliente não precisa esperar enviar todas as requisições para começar a receber respostas; pode receber cada `Category` logo após cada par (name, description) enviado.
+- A ordem é: receber 1 → criar no banco → enviar 1 → receber 2 → criar → enviar 2 → … até o cliente fechar o stream (EOF).
+
+**Motivação da implementação:**
+
+- **Resposta imediata por item:** Em cenários de criação em lote, o cliente pode precisar de feedback contínuo (ex.: exibir cada categoria criada na tela, validar ou seguir para a próxima). No stream bidirecional, o servidor envia cada `Category` assim que a persiste, em vez de acumular e devolver uma lista só no final (como no `CreateCategoryStream`).
+- **Uso do modelo bidirecional do gRPC:** Aproveita o canal full-duplex do HTTP/2: um único RPC com dois fluxos independentes. O cliente pode enviar a próxima requisição enquanto ainda processa a resposta anterior, e o servidor pode enviar assim que tiver o resultado.
+- **Mesmo contrato de mensagens:** Reutiliza `CreateCategoryRequest` e `Category`; a diferença em relação ao client streaming é só a assinatura do RPC (resposta também é stream) e o comportamento (enviar uma resposta por requisição recebida).
+- **Base para padrões avançados:** Esse padrão (receber → processar → enviar em loop) é o mesmo usado em chat, pipelines em tempo real ou processamento sob demanda; aqui aplicado à criação de categorias para ilustrar o fluxo bidirecional.
+
+**No Evans:** Use `call CreateCategoryStreamBidirectional`, preencha name e description para cada categoria; o Evans exibe cada `Category` retornada pelo servidor à medida que forem enviadas. Para encerrar o envio do cliente, use **Ctrl+D** (EOF).
 
 ### Criando servidor gRPC
 
@@ -257,105 +412,6 @@ Em `internal/pb/` são criados dois arquivos (**não edite** — são regenerado
 | **`course_category_grpc.pb.go`** | `protoc-gen-go-grpc` | Interface e implementação do **cliente** (`CategoryServiceClient`, `CreateCategory`) e do **servidor** (`CategoryServiceServer`, `UnimplementedCategoryServiceServer`, `RegisterCategoryServiceServer`). |
 
 No servidor você implementa `CategoryServiceServer` e chama `RegisterCategoryServiceServer`. No cliente você usa `NewCategoryServiceClient(conn)` e `CreateCategory`.
-
----
-
-## O que é gRPC?
-
-**gRPC** (gRPC Remote Procedure Call) é um framework de RPC de alto desempenho, desenvolvido pelo Google e aberto. Permite que um cliente chame métodos em um servidor em outra máquina como se fossem locais.
-
-- **Baseado em contratos**: serviços e métodos definidos em arquivos `.proto`.
-- **Protocol Buffers**: IDL e serialização binária por padrão.
-- **Multiplataforma**: várias linguagens; cliente e servidor podem ser em linguagens diferentes.
-- **HTTP/2**: transporte com multiplexação e streaming.
-
----
-
-## RPC — Remote Procedure Call (Client → Server)
-
-**RPC** é o modelo em que o **cliente** invoca um método que roda no **servidor** (outro processo/máquina), como uma chamada local.
-
-1. Cliente envia requisição (método + parâmetros serializados).
-2. Servidor executa o método e serializa o resultado.
-3. Cliente recebe a resposta.
-
-No gRPC, o cliente usa um *stub* gerado a partir do `.proto`.
-
-```
-[Cliente]  ---- requisição ---->  [Servidor]
-[Cliente]  <---- resposta -------  [Servidor]
-```
-
----
-
-## Protocol Buffers
-
-**Protocol Buffers** (protobuf) é o mecanismo de serialização e IDL usado por padrão no gRPC. Você define mensagens em `.proto` e o `protoc` gera código em várias linguagens.
-
-- **IDL**: contrato entre cliente e servidor.
-- **Binário**: payload compacto e rápido.
-- **Tipagem**: campos com tipo definido; evolução compatível.
-
----
-
-## gRPC vs Protocol Buffers
-
-Não são alternativas: **Protocol Buffers** = formato e contrato dos dados; **gRPC** = framework de RPC que usa esse contrato para comunicação entre cliente e servidor. Em um projeto gRPC você escreve os `.proto` e o gRPC gera stubs e faz as chamadas remotas.
-
----
-
-## Protocol Buffers vs JSON
-
-| Aspecto | Protocol Buffers | JSON |
-|--------|------------------|------|
-| Formato | Binário | Texto |
-| Tamanho / velocidade | Menor, mais rápido | Maior, mais lento |
-| Schema | Obrigatório (`.proto`) | Opcional |
-| Uso típico | Serviço a serviço, gRPC | APIs REST, front-end, debug |
-
----
-
-## HTTP/2
-
-O gRPC usa **HTTP/2**: multiplexação, compressão de cabeçalhos (HPACK), streaming bidirecional e uma única conexão para várias requisições.
-
----
-
-## Tipos de API gRPC
-
-| Tipo | Descrição |
-|------|-----------|
-| **Unary** | Uma requisição, uma resposta. |
-| **Server streaming** | Cliente envia uma mensagem; servidor envia um stream de mensagens. |
-| **Client streaming** | Cliente envia um stream; servidor devolve uma resposta. |
-| **Bidirectional streaming** | Cliente e servidor enviam streams ao mesmo tempo. |
-
-O método **CreateCategory** deste projeto é **Unary**.
-
----
-
-## Em quais casos podemos utilizar?
-
-gRPC é indicado para: comunicação entre microserviços, APIs de alta performance, streaming, ambientes com várias linguagens, mobile/IoT. Considere REST quando a API for voltada a browsers ou o ecossistema já for REST.
-
----
-
-## REST vs gRPC
-
-| Aspecto | REST | gRPC |
-|--------|------|------|
-| Modelo | Recursos + verbos HTTP | Métodos RPC (`.proto`) |
-| Formato | Geralmente JSON | Protocol Buffers (binário) |
-| Transporte | HTTP/1.1 comum | HTTP/2 |
-| Streaming | Limitado | Nativo |
-
-**Resumo:** REST para APIs públicas e front-end; gRPC para serviços internos, baixa latência e contratos fortes.
-
----
-
-## Linguagens (suporte oficial)
-
-gRPC suporta oficialmente: C++, C#/.NET, Dart, Go, Java, Kotlin, Node.js, Objective-C, PHP, Python, Ruby, Swift. Documentação por linguagem em [grpc.io/docs/languages](https://grpc.io/docs/languages/).
 
 ---
 
