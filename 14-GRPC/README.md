@@ -87,6 +87,37 @@ Foi adicionada a operação de **buscar uma categoria pelo ID**: no `.proto` a m
 
 No Evans, após `package pb` e `service CategoryService`, use `call GetCategory` e informe o campo `id` (ex.: um UUID retornado por `CreateCategory` ou `ListCategories`) para testar a busca.
 
+### CreateCategoryStream (client streaming)
+
+Foi adicionado o RPC **CreateCategoryStream**: o cliente envia um **stream** de mensagens `CreateCategoryRequest` (várias categorias em sequência) e o servidor responde com uma única mensagem **CategoryList** contendo todas as categorias criadas. É um exemplo de **client streaming** (uma requisição em fluxo, uma resposta no final).
+
+**O que foi adicionado no `.proto`:**
+
+- **`rpc CreateCategoryStream (stream CreateCategoryRequest) returns (CategoryList);`** — O cliente envia várias mensagens (cada uma com `name` e `description`); o servidor processa em sequência e, ao fechar o stream, devolve uma `CategoryList` com as categorias criadas.
+
+**Funcionamento da implementação:**
+
+- O handler recebe um **stream** (`pb.CategoryService_CreateCategoryStreamServer`). Em loop, chama `stream.Recv()` para receber cada `CreateCategoryRequest`.
+- Para cada mensagem recebida: chama `CategoryDB.Create(req.Name, req.Description)`, acumula a `Category` resultante em uma lista em memória (`categories.Categories`).
+- Quando o cliente **encerra o stream** (envia EOF), `Recv()` retorna `io.EOF`. O servidor então chama `stream.SendAndClose(categories)` e envia a `CategoryList` com todas as categorias criadas e fecha a conexão daquele RPC.
+- Se ocorrer qualquer outro erro em `Recv()` ou no `Create` do banco, o erro é retornado e o stream é encerrado.
+
+**Motivação da implementação:**
+
+- **Criar várias categorias em uma única chamada:** Útil para importação em lote, migração de dados ou telas em que o usuário cadastra várias categorias de uma vez. O cliente envia N mensagens e recebe uma resposta única com as N categorias criadas.
+- **Client streaming:** Aproveita o modelo de streaming do gRPC (envio contínuo pelo cliente, resposta única no fim), reduzindo round-trips em relação a N chamadas unárias separadas e mantendo um contrato simples (mesma mensagem `CreateCategoryRequest`, resposta `CategoryList`).
+- **Reuso:** Usa o mesmo `CategoryDB.Create` e a mesma mensagem `Category` do `CreateCategory`; só muda a forma de receber (stream) e de responder (uma lista ao final).
+
+**No Evans — como usar e como sair (Ctrl+D):**
+
+1. `package pb` → `service CategoryService` → `call CreateCategoryStream`.
+2. O Evans pede **name** e **description** para a **primeira** categoria; digite e confirme.
+3. Em seguida pede de novo **name** e **description** para a **próxima** mensagem do stream; repita quantas categorias quiser.
+4. Para **encerrar o envio** e receber a resposta do servidor, pressione **Ctrl+D** (EOF) **uma vez** no terminal. O Evans interpreta como “fim do stream”; o servidor recebe EOF, monta a `CategoryList` e devolve a resposta.
+5. **Não use Ctrl+C** nesse momento — isso **cancela** a chamada (“inputting canceled”) em vez de fechar o stream. Use **Ctrl+D** para finalizar o envio e ver a resposta.
+
+**Resumo:** CreateCategoryStream = client streaming (várias requisições, uma resposta). No Evans, após inserir as informações de cada categoria, use **Ctrl+D** para indicar que não há mais mensagens e receber a `CategoryList` de volta.
+
 ### Criando servidor gRPC
 
 O ponto de entrada do servidor está em **`cmd/grpcServer/main.go`**. Ele sobe o gRPC na porta **50051** e registra o `CategoryService` com reflexão habilitada (útil para ferramentas como `grpcurl` ou **Evans**).
@@ -163,7 +194,9 @@ evans -r repl
 
 **Motivo:** O Evans exige que **package** e **service** estejam selecionados antes de `call`. Caso contrário aparecem erros como *"package unselected"* ou *"service unselected"*.
 
-**Resumo:** Instale o Evans → suba o servidor → crie a tabela se necessário → em outro terminal rode `evans -r repl` → `package pb` → `service CategoryService` → `call CreateCategory`.
+**RPCs em streaming (ex.: `CreateCategoryStream`):** o Evans fica pedindo várias entradas (uma “mensagem” por vez). Para **finalizar o envio** e receber a resposta, use **Ctrl+D** no terminal (sinal de EOF). **Não use Ctrl+C** — isso cancela a chamada (“inputting canceled”). Detalhes em [CreateCategoryStream (client streaming)](#createcategorystream-client-streaming).
+
+**Resumo:** Instale o Evans → suba o servidor → crie a tabela se necessário → em outro terminal rode `evans -r repl` → `package pb` → `service CategoryService` → `call CreateCategory` (ou `call CreateCategoryStream`; ao terminar de inserir as categorias, use **Ctrl+D**).
 
 ### Alterações no contrato (.proto): regenerar código
 
