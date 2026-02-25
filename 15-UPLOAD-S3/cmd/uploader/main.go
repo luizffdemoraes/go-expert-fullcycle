@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"io"
 	"os"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -53,14 +54,25 @@ func main() {
 		panic(err)
 	}
 	defer dir.Close()
+	for {
+		files, err := dir.Readdir(1)
+		if err != nil {
+			if err == io.EOF {
+				break
+			}
+			fmt.Printf("Error reading directory: %v\n", err)
+			continue
+		}
+		uploadFile(files[0].Name())
+	}
 }
 
 func uploadFile(fileName string) {
 	completeFileName := fmt.Sprintf("./tmp/%s", fileName)
-	fmt.Println("Uploading file %s", completeFileName, "to bucket %s", S3Bucket)
+	fmt.Printf("Uploading file %s to bucket %s\n", completeFileName, S3Bucket)
 	file, err := os.Open(completeFileName)
 	if err != nil {
-		fmt.Println("Error opening file %s", completeFileName)
+		fmt.Printf("Error opening file %s\n", completeFileName)
 		return
 	}
 	defer file.Close()
@@ -70,8 +82,8 @@ func uploadFile(fileName string) {
 		Body:   file,
 	})
 	if err != nil {
-		fmt.Println("Error uploading file %s", completeFileName)
+		fmt.Printf("Error uploading file %s\n", completeFileName)
 		return
 	}
-	fmt.Println("File %s uploaded successfully", completeFileName)
+	fmt.Printf("File %s uploaded successfully\n", completeFileName)
 }
