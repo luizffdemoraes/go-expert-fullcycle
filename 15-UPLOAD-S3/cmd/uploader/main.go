@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"os"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -47,4 +48,30 @@ func env(key, def string) string {
 }
 
 func main() {
+	dir, err := os.Open("./tmp")
+	if err != nil {
+		panic(err)
+	}
+	defer dir.Close()
+}
+
+func uploadFile(fileName string) {
+	completeFileName := fmt.Sprintf("./tmp/%s", fileName)
+	fmt.Println("Uploading file %s", completeFileName, "to bucket %s", S3Bucket)
+	file, err := os.Open(completeFileName)
+	if err != nil {
+		fmt.Println("Error opening file %s", completeFileName)
+		return
+	}
+	defer file.Close()
+	_, err = s3Client.PutObject(context.TODO(), &s3.PutObjectInput{
+		Bucket: aws.String(S3Bucket),
+		Key:    aws.String(fileName),
+		Body:   file,
+	})
+	if err != nil {
+		fmt.Println("Error uploading file %s", completeFileName)
+		return
+	}
+	fmt.Println("File %s uploaded successfully", completeFileName)
 }
