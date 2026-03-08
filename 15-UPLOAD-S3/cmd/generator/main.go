@@ -7,7 +7,7 @@ import (
 
 func main() {
 	i := 0
-	for {
+	for i < 5000 {
 		f, err := os.Create(fmt.Sprintf("./tmp/file_%d.txt", i))
 		if err != nil {
 			panic(err)
