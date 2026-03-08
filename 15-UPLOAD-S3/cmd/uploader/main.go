@@ -88,6 +88,10 @@ func main() {
 		panic(fmt.Sprintf("abrir diretório de upload %q: %v (rode o generator antes ou crie a pasta tmp)", uploadDir, err))
 	}
 	defer d.Close()
+
+	// Struct é a menor unidade de memória que podemos usar para sincronização
+	uploadControl := make(chan struct{}, 100)
+	uploadControl <- struct{}{}
 	for {
 		files, err := d.Readdir(1)
 		if err != nil {
@@ -98,17 +102,20 @@ func main() {
 			continue
 		}
 		wg.Add(1)
-		go uploadFile(files[0].Name())
+		// Aguarda a liberação de um slot para subir o arquivo
+		uploadControl <- struct{}{}
+		go uploadFile(files[0].Name(), uploadControl)
 	}
 }
 
-func uploadFile(fileName string) {
+func uploadFile(fileName string, uploadControl <-chan struct{}) {
 	defer wg.Done()
 	completeFileName := filepath.Join(uploadDir, fileName)
 	fmt.Printf("Uploading file %s to bucket %s\n", completeFileName, S3Bucket)
 	file, err := os.Open(completeFileName)
 	if err != nil {
 		fmt.Printf("Error opening file %s: %v\n", completeFileName, err)
+		<-uploadControl // Libera o slot para outro upload
 		return
 	}
 	defer file.Close()
@@ -120,7 +127,9 @@ func uploadFile(fileName string) {
 	if err != nil {
 		fmt.Printf("Error uploading file %s\n", completeFileName)
 		fmt.Printf("  causa: %v\n", err)
+		<-uploadControl // Libera o slot para outro upload
 		return
 	}
 	fmt.Printf("File %s uploaded successfully\n", completeFileName)
+	<-uploadControl // Libera o slot para outro upload
 }
