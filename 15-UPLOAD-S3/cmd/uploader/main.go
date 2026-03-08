@@ -91,7 +91,24 @@ func main() {
 
 	// Struct é a menor unidade de memória que podemos usar para sincronização
 	uploadControl := make(chan struct{}, 100)
-	uploadControl <- struct{}{}
+	errFileUpload := make(chan string, 100)
+
+	// Goroutine de retry: reenvia para upload os arquivos que falharam ao abrir.
+	// Usamos select + receive em dois valores para detectar close(errFileUpload) e sair.
+	go func() {
+		for {
+			select {
+			case fileName, ok := <-errFileUpload:
+				if !ok {
+					return // canal fechado, encerra o goroutine
+				}
+				uploadControl <- struct{}{}
+				wg.Add(1)
+				go uploadFile(fileName, uploadControl, errFileUpload)
+			}
+		}
+	}()
+
 	for {
 		files, err := d.Readdir(1)
 		if err != nil {
@@ -104,11 +121,13 @@ func main() {
 		wg.Add(1)
 		// Aguarda a liberação de um slot para subir o arquivo
 		uploadControl <- struct{}{}
-		go uploadFile(files[0].Name(), uploadControl)
+		go uploadFile(files[0].Name(), uploadControl, errFileUpload)
 	}
+	wg.Wait()              // espera todos os uploads (incluindo retries) terminarem
+	close(errFileUpload)    // encerra o loop do goroutine de retry
 }
 
-func uploadFile(fileName string, uploadControl <-chan struct{}) {
+func uploadFile(fileName string, uploadControl <-chan struct{}, errFileUpload chan<- string) {
 	defer wg.Done()
 	completeFileName := filepath.Join(uploadDir, fileName)
 	fmt.Printf("Uploading file %s to bucket %s\n", completeFileName, S3Bucket)
@@ -116,6 +135,7 @@ func uploadFile(fileName string, uploadControl <-chan struct{}) {
 	if err != nil {
 		fmt.Printf("Error opening file %s: %v\n", completeFileName, err)
 		<-uploadControl // Libera o slot para outro upload
+		errFileUpload <- fileName // envia só o nome para retry (uploadFile espera fileName, não path completo)
 		return
 	}
 	defer file.Close()
@@ -128,6 +148,7 @@ func uploadFile(fileName string, uploadControl <-chan struct{}) {
 		fmt.Printf("Error uploading file %s\n", completeFileName)
 		fmt.Printf("  causa: %v\n", err)
 		<-uploadControl // Libera o slot para outro upload
+		errFileUpload <- fileName // retentativa também em caso de erro no S3
 		return
 	}
 	fmt.Printf("File %s uploaded successfully\n", completeFileName)
