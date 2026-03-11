@@ -229,6 +229,78 @@ to quickly create a Cobra application.
 
   Usando `main.go` corretamente, o esperado é a saída de um script grande de completion para zsh (iniciando com `#compdef 16-CLI`), que você pode redirecionar para um arquivo e carregar no seu shell.
 
+## Criando nossos primeiros comandos
+
+Nesta etapa, criamos um comando chamado `teste` em `cmd/teste.go`, com uma flag `--comando` (atalho `-c`) que aceita os valores `ping` ou `pong`. O comando imprime no terminal o valor escolhido ou informa que o comando é inválido.
+
+- **Definição do comando `teste`**
+
+  O comando é registrado no Cobra com:
+
+  - `Use: "teste"` – nome do comando (`16-CLI teste`)
+  - Flag `--comando` / `-c` – texto de ajuda: `Escolha ping ou pong`
+  - A flag é obrigatória (`MarkFlagRequired("comando")`)
+
+- **1. Executando com `--comando=ping`**
+
+  ```bash
+  go run main.go teste --comando=ping
+  ```
+
+  **Esperado no terminal:**
+
+  ```text
+  ping
+  ```
+
+- **2. Executando com `-c ping` (forma abreviada)**
+
+  ```bash
+  go run main.go teste -c ping
+  ```
+
+  **Esperado no terminal:**
+
+  ```text
+  ping
+  ```
+
+- **3. Tentando usar uma flag escrita de forma incorreta**
+
+  ```bash
+  go run main.go teste --comand ping
+  ```
+
+  **Esperado no terminal:** erro de flag desconhecida e ajuda do comando:
+
+  ```text
+  Error: unknown flag: --comand
+  Usage:
+    16-CLI teste [flags]
+
+  Flags:
+    -c, --comando string   Escolha ping ou pong
+    -h, --help             help for teste
+
+  exit status 1
+  ```
+
+  Esse exemplo mostra como o Cobra valida flags automaticamente e exibe a ajuda correta quando algo está errado.
+
+- **4. Flag curta escrita de forma incorreta**
+
+  ```bash
+  go run main.go teste -comand ping
+  ```
+
+  Como o código do comando trata qualquer valor diferente de `ping` ou `pong` como inválido, o resultado é:
+
+  ```text
+  comando inválido
+  ```
+
+  Aqui, mesmo que a CLI rode, o valor de `comando` não é reconhecido na lógica do `switch`, e o comportamento padrão é avisar que o comando é inválido.
+
 
 ---
 
