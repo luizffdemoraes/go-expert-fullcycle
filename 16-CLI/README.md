@@ -387,6 +387,69 @@ Os arquivos `cmd/create.go` e `cmd/list.go` são gerados com `categoryCmd.AddCom
 
 Assim, `create` e `list` ficam sob `category`, e a CLI oferece os comandos encadeados `16-CLI category create` e `16-CLI category list`.
 
+## Flags locais vs globais
+
+No Cobra, **flags locais** valem só para aquele comando; **flags globais** (persistentes) valem para o comando e para todos os seus subcomandos. A escolha entre um e outro define onde a opção pode ser usada na linha de comando.
+
+### Diferenças
+
+| Aspecto | Flag local (`Flags()`) | Flag global / persistente (`PersistentFlags()`) |
+|--------|-------------------------|--------------------------------------------------|
+| **Escopo** | Apenas no comando em que foi definida | No comando e em todos os subcomandos (e sub-subcomandos) |
+| **Uso** | `comando --flag` | `comando --flag` ou `comando subcomando --flag` |
+| **Definição** | `cmd.Flags().String("name", "", "desc")` | `cmd.PersistentFlags().String("name", "", "desc")` |
+| **Quando usar** | Opção específica daquela ação | Opção comum a várias ações (ex.: `--name` em create e list) |
+
+### Alterações atuais no projeto
+
+**1. Comando raiz (`cmd/root.go`) — flag local**
+
+A flag `toggle` é **local**: só existe quando se chama o comando raiz, não aparece em `category`, `create` ou `list`.
+
+```go
+rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+```
+
+**Uso no terminal:**
+
+```bash
+go run main.go -t
+go run main.go --toggle
+# Válido; a flag é reconhecida.
+
+go run main.go category -t
+# Inválido; -t não existe no comando category.
+```
+
+**2. Comando `category` (`cmd/category.go`) — flag persistente**
+
+A flag `name` é **global (persistente)** no comando `category`: ela é herdada por `create` e `list`.
+
+```go
+categoryCmd.PersistentFlags().String("name", "", "Name of the category")   // flag global
+// categoryCmd.Flags().String("name", "", "Name of the category")          // flag local (comentada)
+```
+
+Com `PersistentFlags()`, tanto `category` quanto `category create` e `category list` aceitam `--name`:
+
+**Uso no terminal:**
+
+```bash
+go run main.go category --name "Minha Categoria"
+go run main.go category create --name "Nova"
+go run main.go category list --name "Filtro"
+# Todos válidos; --name está disponível em category e nos subcomandos.
+```
+
+Se a flag fosse **local** (`categoryCmd.Flags().String("name", ...)`), apenas `go run main.go category --name "..."` funcionaria; `category create --name` e `category list --name` não reconheceriam `--name`.
+
+### Resumo prático
+
+- **Local:** `cmd.Flags()` — só naquele comando.
+- **Global (persistente):** `cmd.PersistentFlags()` — naquele comando e em todos os subcomandos.
+
+No projeto, a raiz usa flag local (`toggle`) e o comando `category` usa flag persistente (`name`) para que `create` e `list` possam receber `--name` sem redefinir a flag em cada um.
+
 ---
 
 **Resumo:** instale o gerador com `go install github.com/spf13/cobra-cli@latest`, use `cobra-cli init` para inicializar o projeto e `cobra-cli add <nome>` para criar novos comandos.
