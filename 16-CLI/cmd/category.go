@@ -29,9 +29,11 @@ to quickly create a Cobra application.`,
 	},
 }
 
+var category string
+
 func init() {
 	rootCmd.AddCommand(categoryCmd)
-	categoryCmd.PersistentFlags().StringP("name", "n", "Y", "Name of the category")
+	categoryCmd.PersistentFlags().StringVarP(&category, "name", "n", "Y", "Name of the category")
 	categoryCmd.PersistentFlags().BoolP("exists", "e", false, "Check if the category exists")
 	categoryCmd.PersistentFlags().IntP("id", "i", 0, "ID of the category")
 	// categoryCmd.PersistentFlags().String("name", "", "Name of the category") // flag global

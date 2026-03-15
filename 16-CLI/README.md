@@ -466,14 +466,16 @@ O comando `category` define três flags **persistentes** (disponíveis também p
 
 **Definição no código:**
 
+A flag `name` está ligada a uma variável por referência (`StringVarP`); as demais usam as formas que retornam valor e são lidas no `Run` com `Get*`:
+
 ```go
-categoryCmd.PersistentFlags().StringP("name", "n", "Y", "Name of the category")
+categoryCmd.PersistentFlags().StringVarP(&category, "name", "n", "Y", "Name of the category")
 categoryCmd.PersistentFlags().BoolP("exists", "e", false, "Check if the category exists")
 categoryCmd.PersistentFlags().IntP("id", "i", 0, "ID of the category")
 ```
 
 - `StringP`, `BoolP`, `IntP`: o sufixo **P** indica que a flag tem forma **curta** (segundo argumento: `"n"`, `"e"`, `"i"`).
-- Parâmetros: nome longo, atalho, valor padrão, mensagem de ajuda.
+- `StringVarP(&var, ...)`: o valor da flag é escrito na variável `var` por referência; veja o tópico **Flags mudando valor por referência**.
 
 **Leitura das flags no `Run`:**
 
@@ -549,6 +551,67 @@ Como as flags de `category` são persistentes, os subcomandos também aceitam as
 go run main.go category create -n "Nova" -e --id=5
 go run main.go category list --name "Filtro"
 ```
+
+## Flags mudando valor por referência
+
+Em vez de só ler o valor da flag no `Run` com `GetString`, `GetBool`, `GetInt`, você pode **atrelar a flag a uma variável**: o Cobra preenche essa variável por referência ao fazer o parse da linha de comando. Assim, no `Run` você usa a variável diretamente, sem chamar `Get*`.
+
+### Implementação no projeto
+
+No comando `category` (`cmd/category.go`), a flag `name` está ligada à variável de pacote `category` por referência.
+
+**1. Declarar a variável (escopo de pacote):**
+
+```go
+var category string
+```
+
+**2. Definir a flag com a variante `*Var` / `*VarP`:**
+
+```go
+categoryCmd.PersistentFlags().StringVarP(&category, "name", "n", "Y", "Name of the category")
+```
+
+- `StringVarP` recebe um **ponteiro** (`&category`) como primeiro argumento.
+- Quando o usuário passa `-n=categoria` ou `--name=categoria`, o Cobra atribui o valor à variável `category` antes de executar o `Run`.
+- No `Run`, você pode usar `category` diretamente ou continuar usando `cmd.Flags().GetString("name")` — ambos refletem o valor informado na linha de comando.
+
+**3. Uso no `Run` (opcional):**
+
+Se quiser usar a variável em vez de `GetString`:
+
+```go
+Run: func(cmd *cobra.Command, args []string) {
+    fmt.Println("Category called with name:", category)  // variável já preenchida
+    exists, _ := cmd.Flags().GetBool("exists")
+    fmt.Println("Category exists:", exists)
+    id, _ := cmd.Flags().GetInt("id")
+    fmt.Println("Category ID:", id)
+},
+```
+
+### Comando executado no terminal
+
+```bash
+go run main.go category -n=categoria -e --id=10
+```
+
+Com a flag `name` atrelada a `&category`, o Cobra faz `category = "categoria"` antes do `Run`. A saída esperada continua:
+
+```text
+Category called with name: categoria
+Category exists: true
+Category ID: 10
+```
+
+### Resumo: definição com valor vs por referência
+
+| Abordagem | Definição | Leitura |
+|-----------|-----------|---------|
+| **Só valor** | `Flags().StringP("name", "n", "Y", "desc")` | `cmd.Flags().GetString("name")` no `Run` |
+| **Por referência** | `Flags().StringVarP(&category, "name", "n", "Y", "desc")` | Usar a variável `category` no `Run` (já preenchida) |
+
+As variantes `*Var` / `*VarP` existem para todos os tipos comuns: `StringVarP`, `BoolVarP`, `IntVarP`, `Int64VarP`, etc. Usar referência é útil quando você quer reutilizar o valor em vários lugares ou em funções que recebem a variável por parâmetro.
 
 ---
 
