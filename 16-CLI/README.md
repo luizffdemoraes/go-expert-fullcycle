@@ -450,6 +450,106 @@ Se a flag fosse **local** (`categoryCmd.Flags().String("name", ...)`), apenas `g
 
 No projeto, a raiz usa flag local (`toggle`) e o comando `category` usa flag persistente (`name`) para que `create` e `list` possam receber `--name` sem redefinir a flag em cada um.
 
+## Manipulando flags
+
+Este tópico descreve como as flags são definidas, lidas no código e usadas no terminal, com base nas implementações do comando `category`.
+
+### Implementações no comando `category` (`cmd/category.go`)
+
+O comando `category` define três flags **persistentes** (disponíveis também para `category create` e `category list`):
+
+| Flag (longa) | Atalho | Tipo   | Valor padrão | Descrição                    |
+|--------------|--------|--------|--------------|-----------------------------|
+| `--name`     | `-n`   | string | `"Y"`        | Nome da categoria           |
+| `--exists`   | `-e`   | bool   | `false`      | Indica se a categoria existe |
+| `--id`       | `-i`   | int    | `0`          | ID da categoria             |
+
+**Definição no código:**
+
+```go
+categoryCmd.PersistentFlags().StringP("name", "n", "Y", "Name of the category")
+categoryCmd.PersistentFlags().BoolP("exists", "e", false, "Check if the category exists")
+categoryCmd.PersistentFlags().IntP("id", "i", 0, "ID of the category")
+```
+
+- `StringP`, `BoolP`, `IntP`: o sufixo **P** indica que a flag tem forma **curta** (segundo argumento: `"n"`, `"e"`, `"i"`).
+- Parâmetros: nome longo, atalho, valor padrão, mensagem de ajuda.
+
+**Leitura das flags no `Run`:**
+
+No handler do comando, os valores são obtidos com `GetString`, `GetBool` e `GetInt`:
+
+```go
+Run: func(cmd *cobra.Command, args []string) {
+    name, _ := cmd.Flags().GetString("name")
+    fmt.Println("Category called with name:", name)
+    exists, _ := cmd.Flags().GetBool("exists")
+    fmt.Println("Category exists:", exists)
+    id, _ := cmd.Flags().GetInt("id")
+    fmt.Println("Category ID:", id)
+},
+```
+
+Sempre use o **nome longo** da flag (`"name"`, `"exists"`, `"id"`) em `GetString`/`GetBool`/`GetInt`, independentemente de o usuário ter passado `-n` ou `--name` no terminal.
+
+### Comando executado no terminal
+
+Exemplo combinando as três flags (forma curta com `=`, forma longa com `=`, e flag booleana):
+
+```bash
+go run main.go category -n=categoria -e --id=10
+```
+
+**Significado:**
+
+- `-n=categoria` — define o nome da categoria como `categoria`.
+- `-e` — ativa a flag booleana `exists` (equivalente a `--exists`).
+- `--id=10` — define o ID como `10`.
+
+**Saída esperada:**
+
+```text
+Category called with name: categoria
+Category exists: true
+Category ID: 10
+```
+
+### Formas válidas de passar flags
+
+O Cobra aceita várias sintaxes; abaixo exemplos equivalentes para o mesmo resultado.
+
+**String (`name`):**
+
+```bash
+go run main.go category -n=categoria
+go run main.go category -n categoria
+go run main.go category --name=categoria
+go run main.go category --name categoria
+```
+
+**Bool (`exists`):**
+
+```bash
+go run main.go category -e
+go run main.go category --exists
+```
+
+**Int (`id`):**
+
+```bash
+go run main.go category -i=10
+go run main.go category -i 10
+go run main.go category --id=10
+go run main.go category --id 10
+```
+
+Como as flags de `category` são persistentes, os subcomandos também aceitam as mesmas flags:
+
+```bash
+go run main.go category create -n "Nova" -e --id=5
+go run main.go category list --name "Filtro"
+```
+
 ---
 
 **Resumo:** instale o gerador com `go install github.com/spf13/cobra-cli@latest`, use `cobra-cli init` para inicializar o projeto e `cobra-cli add <nome>` para criar novos comandos.
