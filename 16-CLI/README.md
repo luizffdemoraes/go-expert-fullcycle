@@ -613,6 +613,75 @@ Category ID: 10
 
 As variantes `*Var` / `*VarP` existem para todos os tipos comuns: `StringVarP`, `BoolVarP`, `IntVarP`, `Int64VarP`, etc. Usar referência é útil quando você quer reutilizar o valor em vários lugares ou em funções que recebem a variável por parâmetro.
 
+## Entendendo hooks
+
+No Cobra, **hooks** são funções que rodam em momentos específicos do ciclo de vida do comando: antes do comando principal (`PreRun`), depois (`PostRun`) ou em vez dele com retorno de erro (`RunE`). Eles servem para inicializar recursos, validar argumentos, fazer log ou limpeza.
+
+### Ordem de execução
+
+Para um comando (ex.: `category`), a ordem típica é:
+
+1. **PersistentPreRun** (do comando e dos pais, da raiz para o comando atual)
+2. **PreRun** (apenas do comando atual)
+3. **Run** ou **RunE** (ação principal; se **RunE** estiver definido, ele é usado no lugar de **Run**)
+4. **PostRun** (apenas do comando atual)
+5. **PersistentPostRun** (do comando e dos pais, do comando atual até a raiz)
+
+### Implementação no projeto (`cmd/category.go`)
+
+O comando `category` define três hooks para ilustrar o fluxo:
+
+**PreRun — executado antes do `Run`/`RunE`:**
+
+```go
+PreRun: func(cmd *cobra.Command, args []string) {
+    fmt.Println("Chamado antes da execução do Run")
+},
+```
+
+**PostRun — executado depois do `Run`/`RunE`:**
+
+```go
+PostRun: func(cmd *cobra.Command, args []string) {
+    fmt.Println("Chamado depois da execução do Run")
+},
+```
+
+**RunE — ação principal com retorno de erro:**
+
+Quando definido, o Cobra usa **RunE** em vez de **Run**. Se a função retornar um erro não nulo, a execução é interrompida e o programa pode sair com código de erro.
+
+```go
+RunE: func(cmd *cobra.Command, args []string) error {
+    return fmt.Errorf("Ocorreu um erro")
+},
+```
+
+Se **Run** e **RunE** estiverem ambos definidos no mesmo comando, apenas **RunE** é executado. No exemplo acima, como `RunE` retorna erro, a saída do programa será o erro e o código de saída 1; **PostRun** ainda é chamado após o **RunE**.
+
+### Resumo dos hooks
+
+| Hook | Escopo | Uso típico |
+|------|--------|------------|
+| **PersistentPreRun** | Comando + todos os subcomandos | Abrir conexão com DB, carregar config global |
+| **PreRun** | Só o comando atual | Validar args/flags antes da ação |
+| **Run** | Ação principal (sem retorno de erro) | Lógica do comando |
+| **RunE** | Ação principal (retorna `error`) | Mesmo que Run, mas com tratamento de erro integrado |
+| **PostRun** | Só o comando atual | Log, métricas, limpeza local |
+| **PersistentPostRun** | Comando + todos os subcomandos | Fechar conexões, flush de buffers |
+
+### Exemplo de saída no terminal
+
+Com a implementação atual, ao rodar:
+
+```bash
+go run main.go category -n=categoria -e --id=10
+```
+
+a ordem da saída será: primeiro **PreRun** (“Chamado antes da execução do Run”), depois **RunE** (que retorna erro e pode ser exibido), em seguida **PostRun** (“Chamado depois da execução do Run”). O **Run** não é executado quando **RunE** está definido.
+
+Para ver **PreRun** e **PostRun** junto com a lógica do **Run**, remova ou comente o **RunE** no `categoryCmd`; assim o Cobra usará o **Run** e você verá as três mensagens na ordem: PreRun → Run → PostRun.
+
 ---
 
 **Resumo:** instale o gerador com `go install github.com/spf13/cobra-cli@latest`, use `cobra-cli init` para inicializar o projeto e `cobra-cli add <nome>` para criar novos comandos.

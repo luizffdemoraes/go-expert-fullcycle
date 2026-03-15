@@ -27,6 +27,18 @@ to quickly create a Cobra application.`,
 		id, _ := cmd.Flags().GetInt("id")
 		fmt.Println("Category ID:", id)
 	},
+	// hook para executar antes da execução do comando
+	PreRun: func(cmd *cobra.Command, args []string) {
+		fmt.Println("Chamado antes da execução do Run")
+	},
+	// hook para executar depois da execução do comando
+	PostRun: func(cmd *cobra.Command, args []string) {
+		fmt.Println("Chamado depois da execução do Run")
+	},
+	// hook para executar em caso de erro
+	RunE: func(cmd *cobra.Command, args []string) error {
+		return fmt.Errorf("Ocorreu um erro")
+	},
 }
 
 var category string
