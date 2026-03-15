@@ -1,16 +1,43 @@
 /*
 Copyright © 2026 NAME HERE <EMAIL ADDRESS>
-
 */
 package cmd
 
 import (
+	"database/sql"
 	"os"
 
+	"github.com/luizffdemoraes/16-CLI/internal/database"
+	_ "github.com/mattn/go-sqlite3"
 	"github.com/spf13/cobra"
 )
 
+func GetDB() *sql.DB {
+	db, err := sql.Open("sqlite3", "data.db")
+	if err != nil {
+		panic(err)
+	}
+	// Cria as tabelas se não existirem (compatível com sqlite3 data.db)
+	_, _ = db.Exec(`
+		CREATE TABLE IF NOT EXISTS categories (
+			id TEXT PRIMARY KEY,
+			name TEXT NOT NULL,
+			description TEXT NOT NULL
+		);
+		CREATE TABLE IF NOT EXISTS courses (
+			id TEXT PRIMARY KEY,
+			name TEXT NOT NULL,
+			description TEXT NOT NULL,
+			category_id TEXT NOT NULL,
+			FOREIGN KEY (category_id) REFERENCES categories(id)
+		);
+	`)
+	return db
+}
 
+func GetCategoryDB(db *sql.DB) database.Category {
+	return *database.NewCategory(db)
+}
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
@@ -47,5 +74,3 @@ func init() {
 	// when this action is called directly.
 	rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
-
-

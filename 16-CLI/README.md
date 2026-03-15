@@ -682,6 +682,88 @@ a ordem da saída será: primeiro **PreRun** (“Chamado antes da execução do 
 
 Para ver **PreRun** e **PostRun** junto com a lógica do **Run**, remova ou comente o **RunE** no `categoryCmd`; assim o Cobra usará o **Run** e você verá as três mensagens na ordem: PreRun → Run → PostRun.
 
+## Trabalhando com banco de dados
+
+O projeto usa **SQLite** com o arquivo `data.db` na raiz. As tabelas são criadas automaticamente na primeira conexão. Os comandos da CLI (por exemplo `category create`) gravam e leem dados nesse banco.
+
+### Implementação
+
+**Driver e conexão (`cmd/root.go`):**
+
+- Import do driver com blank import: `_ "github.com/mattn/go-sqlite3"`.
+- `GetDB()` abre o banco com `sql.Open("sqlite3", "data.db")` e executa `CREATE TABLE IF NOT EXISTS` para `categories` e `courses`, para que o arquivo seja compatível com o uso direto de `sqlite3 data.db` no terminal.
+
+```go
+func GetDB() *sql.DB {
+	db, err := sql.Open("sqlite3", "data.db")
+	if err != nil {
+		panic(err)
+	}
+	_, _ = db.Exec(`
+		CREATE TABLE IF NOT EXISTS categories (
+			id TEXT PRIMARY KEY,
+			name TEXT NOT NULL,
+			description TEXT NOT NULL
+		);
+		CREATE TABLE IF NOT EXISTS courses (...);
+	`)
+	return db
+}
+```
+
+**Camada de dados (`internal/database/category.go`):**
+
+- `NewCategory(db)` recebe `*sql.DB` e retorna o tipo que faz `Create`, `FindAll`, etc.
+- `Create(name, description string)` gera um UUID, insere na tabela `categories` com placeholders `?` (SQLite) e retorna `(Category, error)`.
+
+**Comando `category create` (`cmd/create.go`):**
+
+- Flags: `-n`/`--name` e `-d`/`--description` (obrigatória).
+- Obtém a conexão com `GetDB()`, fecha com `defer db.Close()`, usa `GetCategoryDB(db)` e chama `Create(name, description)`.
+- Usa `RunE` para retornar erro em caso de falha; em sucesso imprime a categoria criada (id, name, description).
+
+### Comando no terminal (CLI)
+
+Criar uma categoria:
+
+```bash
+go run main.go category create -n=Cat -d=Desc
+```
+
+**Saída esperada:**
+
+```text
+Categoria criada: id=1115477b-09b4-48d9-b0d2-169944184988 name=Cat description=Desc
+```
+
+O `id` é um UUID gerado automaticamente. Qualquer erro (por exemplo de banco) é exibido e o processo encerra com código de saída não zero.
+
+### Inspecionando o banco com sqlite3
+
+O mesmo arquivo `data.db` pode ser aberto pelo cliente **sqlite3** no terminal.
+
+**Antes de rodar o comando create:** se as tabelas ainda não existirem (por exemplo na primeira vez, antes de qualquer execução da CLI), a consulta falha:
+
+```bash
+sqlite3 data.db
+```
+
+```text
+sqlite> select * from categories;
+Parse error: no such table: categories
+```
+
+**Depois de rodar** `go run main.go category create -n=Cat -d=Desc`, o `GetDB()` cria as tabelas (se não existirem) e o comando insere a linha. No sqlite3:
+
+```text
+sqlite> select * from categories;
+1115477b-09b4-48d9-b0d2-169944184988|Cat|Desc
+```
+
+As colunas são `id`, `name`, `description` (separadas por `|` no modo padrão do sqlite3).
+
+Em resumo: o arquivo `data.db` é o SQLite usado pela CLI; na primeira conexão as tabelas são criadas e o comando `category create -n=... -d=...` persiste a categoria; para conferir os dados, use `sqlite3 data.db` e `select * from categories;`.
+
 ---
 
 **Resumo:** instale o gerador com `go install github.com/spf13/cobra-cli@latest`, use `cobra-cli init` para inicializar o projeto e `cobra-cli add <nome>` para criar novos comandos.
