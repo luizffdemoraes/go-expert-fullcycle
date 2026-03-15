@@ -301,6 +301,91 @@ Nesta etapa, criamos um comando chamado `teste` em `cmd/teste.go`, com uma flag 
 
   Aqui, mesmo que a CLI rode, o valor de `comando` não é reconhecido na lógica do `switch`, e o comportamento padrão é avisar que o comando é inválido.
 
+## Comandos encadeados
+
+No Cobra, **comandos encadeados** (ou hierárquicos) são subcomandos anexados a outro comando, formando cadeias como `16-CLI category create` e `16-CLI category list`. Isso organiza a CLI por contexto (por exemplo, tudo relacionado a categorias fica sob `category`).
+
+### Estrutura implementada
+
+- **Raiz:** `16-CLI` (`cmd/root.go`)
+- **Comando intermediário:** `category` (`cmd/category.go`) — anexado à raiz com `rootCmd.AddCommand(categoryCmd)`.
+- **Subcomandos de category:**
+  - `create` (`cmd/create.go`) — anexado com `categoryCmd.AddCommand(createCmd)`.
+  - `list` (`cmd/list.go`) — anexado com `categoryCmd.AddCommand(listCmd)`.
+
+Assim, a árvore fica:
+
+```text
+16-CLI
+└── category
+    ├── create
+    └── list
+```
+
+### Como usar
+
+| Comando | Descrição |
+|--------|-----------|
+| `go run main.go category` | Exibe a ajuda do comando `category` (e lista os subcomandos `create` e `list`). |
+| `go run main.go category create` | Executa a ação de criação (atualmente imprime `create called`). |
+| `go run main.go category list` | Executa a ação de listagem (atualmente imprime `list called`). |
+
+### Exemplos no terminal
+
+**Ajuda do comando `category`:**
+
+```bash
+go run main.go category --help
+```
+
+**Esperado:** saída com uso `16-CLI category [command]` e lista de subcomandos disponíveis (`create`, `list`).
+
+**Chamar create e list:**
+
+```bash
+go run main.go category create
+# create called
+
+go run main.go category list
+# list called
+```
+
+### Comandos no terminal para criar a estrutura encadeada
+
+Use a flag `-p` (ou `--parent`) do cobra-cli para indicar o comando pai. O gerador já cria o arquivo com `parentCmd.AddCommand(novoCmd)` no `init()`.
+
+**Criar o comando pai (nível raiz):**
+
+```bash
+cobra-cli add category
+```
+
+**Esperado:** criação de `cmd/category.go` e registro em `rootCmd` (ou você anexa manualmente em `root.go` se precisar).
+
+**Criar subcomandos já vinculados ao `category`:**
+
+```bash
+cobra-cli add create -p 'categoryCmd'
+cobra-cli add list -p 'categoryCmd'
+```
+
+**Esperado no terminal:** mensagens como:
+
+```text
+create created at /home/lffm1994/workspace/go-expert-fullcycle/16-CLI
+list created at /home/lffm1994/workspace/go-expert-fullcycle/16-CLI
+```
+
+Os arquivos `cmd/create.go` e `cmd/list.go` são gerados com `categoryCmd.AddCommand(createCmd)` e `categoryCmd.AddCommand(listCmd)` no `init()`, então não é necessário alterar manualmente o pai do comando.
+
+### Como criar subcomandos encadeados (resumo)
+
+1. Gerar o comando pai (ex.: `category`): `cobra-cli add category`.
+2. Gerar cada subcomando passando o pai com `-p 'categoryCmd'`:
+   - `cobra-cli add create -p 'categoryCmd'`
+   - `cobra-cli add list -p 'categoryCmd'`
+
+Assim, `create` e `list` ficam sob `category`, e a CLI oferece os comandos encadeados `16-CLI category create` e `16-CLI category list`.
 
 ---
 
