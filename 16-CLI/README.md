@@ -764,6 +764,85 @@ As colunas são `id`, `name`, `description` (separadas por `|` no modo padrão d
 
 Em resumo: o arquivo `data.db` é o SQLite usado pela CLI; na primeira conexão as tabelas são criadas e o comando `category create -n=... -d=...` persiste a categoria; para conferir os dados, use `sqlite3 data.db` e `select * from categories;`.
 
+## Inversão de controle ao executar comandos
+
+**Inversão de controle (IoC)** aqui significa: o comando não obtém as dependências (banco, repositório) dentro do handler `RunE`; em vez disso, quem monta o comando **injeta** essas dependências. Assim, o handler só recebe o que precisa (por exemplo `database.Category`) e fica fácil trocar a implementação em testes ou em outro contexto.
+
+### Implementação no projeto
+
+**1. Tipo do handler (`cmd/root.go`)**
+
+O tipo `RunEFunc` descreve a assinatura do handler usado em `RunE`:
+
+```go
+type RunEFunc func(cmd *cobra.Command, args []string) error
+```
+
+Assim, funções que retornam esse tipo podem ser atribuídas a `Command.RunE` e reutilizadas de forma tipada.
+
+**2. Fábrica do comando que recebe a dependência (`cmd/create.go`)**
+
+O comando `create` é construído por uma função que **recebe** o repositório de categorias:
+
+```go
+func newCreateCommand(categoryDB database.Category) *cobra.Command {
+	return &cobra.Command{
+		Use:   "create",
+		Short: "A brief description of your command",
+		Long:  `A longer description that spans multiple lines and likely contains examples`,
+		RunE:  runCreate(categoryDB),
+	}
+}
+```
+
+Ou seja: quem chama `newCreateCommand` é quem decide qual `categoryDB` o comando usa (real, mock, etc.). O comando não chama `GetDB()` nem `GetCategoryDB()` dentro do handler.
+
+**3. Handler que “fecha” sobre a dependência (`cmd/create.go`)**
+
+`runCreate` recebe `categoryDB` e retorna um `RunEFunc` que usa esse valor quando o comando for executado:
+
+```go
+func runCreate(categoryDB database.Category) RunEFunc {
+	return func(cmd *cobra.Command, args []string) error {
+		name, _ := cmd.Flags().GetString("name")
+		description, _ := cmd.Flags().GetString("description")
+		_, err := categoryDB.Create(name, description)
+		if err != nil {
+			return err
+		}
+		return nil
+	}
+}
+```
+
+O handler não conhece a origem de `categoryDB`; ele só usa a interface/repositório que foi injetado.
+
+**4. Montagem no `init()` — ponto único de composição**
+
+No `init()` do pacote `cmd`, a dependência é criada uma vez e injetada no comando:
+
+```go
+func init() {
+	createCmd := newCreateCommand(GetCategoryDB(GetDB()))
+	categoryCmd.AddCommand(createCmd)
+	createCmd.Flags().StringP("name", "n", "", "Name of the category")
+	createCmd.Flags().StringP("description", "d", "", "Description of the category")
+	createCmd.MarkFlagRequired("description")
+}
+```
+
+Fluxo: `GetDB()` → `GetCategoryDB(db)` → `newCreateCommand(categoryDB)`. O comando que é adicionado a `categoryCmd` já está “ligado” ao repositório real. Em testes, pode-se chamar `newCreateCommand(mockCategory)` e adicionar esse comando a uma árvore de teste, sem usar o banco real.
+
+### Resumo do fluxo
+
+| Etapa | Onde | O que acontece |
+|-------|------|----------------|
+| 1 | `init()` | `GetDB()` e `GetCategoryDB(db)` criam a dependência concreta. |
+| 2 | `init()` | `newCreateCommand(categoryDB)` recebe essa dependência e monta o comando com `RunE: runCreate(categoryDB)`. |
+| 3 | Execução | Cobra chama o `RunEFunc` retornado por `runCreate(categoryDB)`; o closure já tem `categoryDB` e usa `categoryDB.Create(...)`. |
+
+Com isso, a **inversão de controle** fica clara: o comando não controla nem cria suas dependências; quem monta a árvore de comandos (`init`) é que injeta o repositório, o que facilita testes e troca de implementação.
+
 ---
 
 **Resumo:** instale o gerador com `go install github.com/spf13/cobra-cli@latest`, use `cobra-cli init` para inicializar o projeto e `cobra-cli add <nome>` para criar novos comandos.
