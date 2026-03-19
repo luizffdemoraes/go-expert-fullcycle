@@ -4,6 +4,7 @@ Referências e ferramentas utilizadas neste módulo:
 
 - **[sqlc](https://sqlc.dev/)** — Compile SQL to type-safe code
 - **[golang-migrate/migrate](https://github.com/golang-migrate/migrate)** — CLI de migrações para Go
+- **[jmoiron/sqlx](https://github.com/jmoiron/sqlx)** — Extensões para `database/sql` (Go)
 
 ---
 
