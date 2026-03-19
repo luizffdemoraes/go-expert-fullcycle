@@ -33,3 +33,50 @@ sudo mv migrate /usr/local/bin/
 ```bash
 migrate -version
 ```
+
+---
+
+## Criação e limpeza das migrações
+
+### Criar primeira migração
+```bash
+migrate create -ext=sql -dir=sql/migrations -seq init
+```
+
+### Executar migrações
+```bash
+migrate -path=sql/migrations -database "mysql://root:root@tcp(localhost:3306)/mydatabase" -verbose up
+```
+
+### Rodar migrações via Makefile
+> O `make migrate-up` e `make migrate-down` garantem que o banco `courses` exista (criando via Docker) antes de executar o `migrate`.
+
+```bash
+make create-migration
+make migrate-up
+make migrate-down
+```
+
+Observacao: ao rodar `make migrate-down`, o `migrate` pede confirmação:
+```
+Are you sure you want to apply all down migrations? [y/N]
+```
+Digite `y` e pressione Enter para continuar.
+
+### Acessar o container do MySQL e o banco
+```bash
+docker compose exec mysql bash
+mysql -uroot -proot mydatabase
+```
+
+Arquivos gerados (exemplo):
+```text
+/home/lffm1994/sql/migrations/000001_init.up.sql
+/home/lffm1994/sql/migrations/000001_init.down.sql
+```
+
+### Remover migrações (limpar diretório)
+```bash
+rm -rf ~/sql/migrations
+rm -rf ~/sql
+```
