@@ -1,4 +1,4 @@
--- name: GetCategories :many
+-- name: ListCategories :many
 SELECT * FROM categories;
 
 -- name: GetCategoryById :one

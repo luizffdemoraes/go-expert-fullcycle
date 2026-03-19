@@ -34,12 +34,24 @@ func (q *Queries) DeleteCategory(ctx context.Context, id string) error {
 	return err
 }
 
-const getCategories = `-- name: GetCategories :many
+const getCategoryById = `-- name: GetCategoryById :one
+SELECT id, name, description FROM categories 
+WHERE id = ?
+`
+
+func (q *Queries) GetCategoryById(ctx context.Context, id string) (Category, error) {
+	row := q.db.QueryRowContext(ctx, getCategoryById, id)
+	var i Category
+	err := row.Scan(&i.ID, &i.Name, &i.Description)
+	return i, err
+}
+
+const listCategories = `-- name: ListCategories :many
 SELECT id, name, description FROM categories
 `
 
-func (q *Queries) GetCategories(ctx context.Context) ([]Category, error) {
-	rows, err := q.db.QueryContext(ctx, getCategories)
+func (q *Queries) ListCategories(ctx context.Context) ([]Category, error) {
+	rows, err := q.db.QueryContext(ctx, listCategories)
 	if err != nil {
 		return nil, err
 	}
@@ -59,18 +71,6 @@ func (q *Queries) GetCategories(ctx context.Context) ([]Category, error) {
 		return nil, err
 	}
 	return items, nil
-}
-
-const getCategoryById = `-- name: GetCategoryById :one
-SELECT id, name, description FROM categories 
-WHERE id = ?
-`
-
-func (q *Queries) GetCategoryById(ctx context.Context, id string) (Category, error) {
-	row := q.db.QueryRowContext(ctx, getCategoryById, id)
-	var i Category
-	err := row.Scan(&i.ID, &i.Name, &i.Description)
-	return i, err
 }
 
 const updateCategory = `-- name: UpdateCategory :exec
