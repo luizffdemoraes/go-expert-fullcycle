@@ -3,7 +3,7 @@
 Referências e ferramentas utilizadas neste módulo:
 
 - **[sqlc](https://sqlc.dev/)** — Compile SQL to type-safe code
-- **[golang-migrate](https://github.com/golang-migrate/migrate/tree/master/cmd/migrate)** — CLI de migrações para Go
+- **[golang-migrate/migrate](https://github.com/golang-migrate/migrate)** — CLI de migrações para Go
 
 ---
 
