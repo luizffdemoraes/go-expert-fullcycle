@@ -46,7 +46,7 @@ migrate create -ext=sql -dir=sql/migrations -seq init
 
 ### Executar migrações
 ```bash
-migrate -path=sql/migrations -database "mysql://root:root@tcp(localhost:3306)/mydatabase" -verbose up
+migrate -path=sql/migrations -database "mysql://root:root@tcp(localhost:3306)/courses" -verbose up
 ```
 
 ### Rodar migrações via Makefile
@@ -67,7 +67,7 @@ Digite `y` e pressione Enter para continuar.
 ### Acessar o container do MySQL e o banco
 ```bash
 docker compose exec mysql bash
-mysql -uroot -proot mydatabase
+mysql -uroot -proot courses
 ```
 
 Arquivos gerados (exemplo):
@@ -81,3 +81,31 @@ Arquivos gerados (exemplo):
 rm -rf ~/sql/migrations
 rm -rf ~/sql
 ```
+
+---
+
+## Vendo a transação funcionar
+
+1) Rode o exemplo de transação:
+```bash
+go run ./cmd/server-transaction/main.go
+```
+
+2) Valide no MySQL que as tabelas foram populadas:
+```bash
+docker compose exec mysql mysql -uroot -proot -D courses -e "
+SHOW TABLES;
+SELECT COUNT(*) AS categories_count FROM categories;
+SELECT COUNT(*) AS courses_count FROM courses;
+SELECT c.name AS category, co.name AS course, co.price
+FROM categories c
+JOIN courses co ON co.category_id = c.id
+ORDER BY co.id DESC
+LIMIT 5;
+"
+```
+
+Se a transação estiver funcionando, o resultado deve mostrar:
+- `categories_count > 0`
+- `courses_count > 0`
+- `price` preenchido (ex: `99.90`).
