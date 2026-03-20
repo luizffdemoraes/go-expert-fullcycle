@@ -109,3 +109,9 @@ Se a transação estiver funcionando, o resultado deve mostrar:
 - `categories_count > 0`
 - `courses_count > 0`
 - `price` preenchido (ex: `99.90`).
+
+### Validação via SELECT (categorias)
+
+```bash
+docker compose exec mysql mysql -uroot -proot -D courses -e "SELECT * FROM categories;"
+```

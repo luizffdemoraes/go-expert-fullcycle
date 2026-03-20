@@ -34,7 +34,7 @@ type CreateCourseParams struct {
 	CategoryID  string
 	Name        string
 	Description sql.NullString
-	Price       string
+	Price       float64
 }
 
 func (q *Queries) CreateCourse(ctx context.Context, arg CreateCourseParams) error {

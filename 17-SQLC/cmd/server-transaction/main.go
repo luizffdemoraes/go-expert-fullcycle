@@ -27,7 +27,7 @@ type CourseParams struct {
 	ID          string
 	Name        string
 	Description sql.NullString
-	Price       string // decimal(10,2) no MySQL — use string no driver
+	Price       float64 // decimal(10,2) no MySQL — use string no driver
 }
 
 type CategoryParams struct {
@@ -96,7 +96,7 @@ func main() {
 		ID:          uuid.New().String(),
 		Name:        "Go",
 		Description: sql.NullString{String: "Go Course", Valid: true},
-		Price:       "99.90",
+		Price:       99.90,
 	}
 	categoryArgs := CategoryParams{
 		ID:          uuid.New().String(),
