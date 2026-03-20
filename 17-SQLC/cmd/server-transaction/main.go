@@ -90,7 +90,18 @@ func main() {
 		panic(err)
 	}
 	defer dbConn.Close()
-	// queries := db.New(dbConn)
+	queries := db.New(dbConn)
+	courses, err := queries.ListCourses(ctx)
+	if err != nil {
+		panic(err)
+	}
+	for _, course := range courses {
+		fmt.Printf("Category: %+v\n", course.ID)
+		fmt.Printf("Course: %+v\n", course.Name)
+		fmt.Printf("Description: %+v\n", course.Description)
+		fmt.Printf("Price: %+v\n", course.Price)
+		fmt.Println("--------------------------------")
+	}
 
 	courseArgs := CourseParams{
 		ID:          uuid.New().String(),
