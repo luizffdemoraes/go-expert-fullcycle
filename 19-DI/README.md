@@ -25,6 +25,27 @@ O [Wire](https://github.com/google/wire) não é um container IoC em runtime. El
 
 O import do driver SQLite com `_` em `wire_gen.go` existe para que o pacote seja registrado quando o grafo é compilado junto ao binário (mesmo padrão do `main.go`).
 
+### Como usar o Wire neste projeto
+
+1. **Build tags (`wireinject`)**  
+   - `wire.go` começa com `//go:build wireinject` — esse arquivo **só** é compilado quando você roda a ferramenta `wire` (ela usa essa tag para analisar o injetor).  
+   - `wire_gen.go` usa `//go:build !wireinject` — é o que o `go build` / `go run` usam no dia a dia. Assim o binário não mistura o “rascunho” do injetor com o código gerado.
+
+2. **Definir o injetor em `wire.go`**  
+   - Crie uma função com a **assinatura desejada** (ex.: `NewUseCase(db *sql.DB) *product.ProductUseCase`).  
+   - No corpo, chame `wire.Build(...)` listando tudo que o Wire precisa para montar o retorno: construtores (`product.NewProductUseCase`) e, opcionalmente, `wire.NewSet(...)` com `wire.Bind` quando um parâmetro é **interface** e a implementação é um **tipo concreto** (neste repo: `ProductRepositoryInterface` → `*ProductRepository`).  
+   - O `return` no final é só um valor “placeholder”; o Wire ignora e substitui pela geração.
+
+3. **Gerar o código**  
+   - Na raiz do módulo: `go generate .` (o `//go:generate` em `wire_gen.go` invoca o comando `wire`).  
+   - Depois disso, confira se `wire_gen.go` foi atualizado e rode `go build` ou `go run .`.
+
+4. **Alterar dependências**  
+   - Ao incluir um novo tipo no grafo (novo `New...` ou novo binding), **edite só `wire.go`** e rode `go generate .` de novo.
+
+5. **Ferramenta**  
+   - O `go generate` usa o módulo `github.com/google/wire`; ter `github.com/google/wire` no `go.mod` (como neste projeto) permite o `go run` do gerador sem instalar o binário `wire` no PATH — opcionalmente você pode usar `go install github.com/google/wire/cmd/wire@latest` e rodar `wire` na pasta do pacote.
+
 ## Bibliotecas de DI e sua utilização
 
 Em Go é comum combinar **construtores explícitos** (`New...`) com uma ferramenta que monta o grafo. Duas abordagens frequentes:
@@ -77,13 +98,7 @@ go run .
 
 ## Regenerar o código do Wire
 
-Após alterar `wire.go`:
-
-```bash
-go generate .
-```
-
-Certifique-se de ter a dependência `github.com/google/wire` no módulo (já referenciada no `go.mod`).
+Após alterar `wire.go`, rode `go generate .` (detalhes no tópico [Como usar o Wire neste projeto](#como-usar-o-wire-neste-projeto)). A dependência `github.com/google/wire` no `go.mod` já cobre o comando do `go generate`.
 
 ## Estrutura
 
